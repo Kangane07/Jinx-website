@@ -1,0 +1,168 @@
+
+/* Premium Color Palette */
+:root {
+    --primary-color: #6C63FF; /* Soft purple */
+    --secondary-color: #FFD369; /* Warm yellow */
+    --background-color: #F8F9FA; /* Light gray */
+    --text-color: #333; /* Dark text */
+    --button-hover: #4B47C3; /* Darker purple */
+}
+
+/* General Styles */
+html, body {
+    height: 100%; /* Ensures the background covers the entire screen */
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #6C63FF, #FFD369); /* Smooth gradient background */
+    color: var(--text-color);
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh; /* Makes sure it stretches to fill the viewport */
+}
+
+#game-container {
+    margin: 20px;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(145deg, #ffffff, #e6e6e6);
+    max-width: 400px;
+    position: relative;
+    z-index: 10;
+    width: 100%;
+}
+
+h1, h2 {
+    color: var(--primary-color);
+}
+
+input {
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 90%;
+    font-size: 16px;
+}
+
+.button {
+    display: inline-block;
+    padding: 12px 25px;
+    margin: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    background-color: var(--primary-color);
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.button:hover {
+    background-color: var(--button-hover);
+}
+
+.hidden {
+    display: none;
+}
+
+#question-area {
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--secondary-color);
+    margin: 20px 0;
+}
+
+/* Modal Styles */
+#modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s, opacity 0.3s;
+}
+
+#modal.active {
+    visibility: visible;
+    opacity: 1;
+}
+
+#modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    max-width: 300px;
+    width: 80%;
+}
+
+#modal-content p {
+    font-size: 18px;
+    font-weight: bold;
+    margin: 0 0 10px;
+}
+
+#close-modal {
+    padding: 10px 20px;
+    background-color: var(--secondary-color);
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Contact Developer Button */
+#contact-developer {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background-color: var(--secondary-color);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: none;
+    z-index: 20;
+}
+
+#contact-developer:hover {
+    background-color: #ffbb33;
+}
+
+@media (max-width: 600px) {
+    h1, h2 {
+        font-size: 24px;
+    }
+
+    input {
+        font-size: 14px;
+        width: 90%;
+    }
+
+    .button {
+        font-size: 14px;
+        padding: 10px 20px;
+    }
+
+    #contact-developer {
+        font-size: 12px;
+        padding: 8px 15px;
+    }
+}

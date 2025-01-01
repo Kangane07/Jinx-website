@@ -1,0 +1,327 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jinx Game</title>
+    <style>
+        /* Premium Color Palette */
+        :root {
+            --primary-color: #6C63FF; /* Soft purple */
+            --secondary-color: #FFD369; /* Warm yellow */
+            --background-color: #F8F9FA; /* Light gray */
+            --text-color: #333; /* Dark text */
+            --button-hover: #4B47C3; /* Darker purple */
+        }
+
+        /* General Styles */
+        html, body {
+            height: 100%; /* Ensures the background covers the entire screen */
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #6C63FF, #FFD369); /* Smooth gradient background */
+            color: var(--text-color);
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh; /* Makes sure it stretches to fill the viewport */
+        }
+
+        #game-container {
+            margin: 20px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            max-width: 400px;
+            position: relative;
+            z-index: 10;
+            width: 100%;
+        }
+
+        h1, h2 {
+            color: var(--primary-color);
+        }
+
+        input {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 90%;
+            font-size: 16px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 25px;
+            margin: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            background-color: var(--primary-color);
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: var(--button-hover);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #question-area {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--secondary-color);
+            margin: 20px 0;
+        }
+
+        /* Modal Styles */
+        #modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s, opacity 0.3s;
+        }
+
+        #modal.active {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        #modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+            max-width: 300px;
+            width: 80%;
+        }
+
+        #modal-content p {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 0 0 10px;
+        }
+
+        #close-modal {
+            padding: 10px 20px;
+            background-color: var(--secondary-color);
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Contact Developer Button */
+        #contact-developer {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            text-decoration: none;
+            z-index: 20;
+        }
+
+        #contact-developer:hover {
+            background-color: #ffbb33;
+        }
+
+        @media (max-width: 600px) {
+            h1, h2 {
+                font-size: 24px;
+            }
+
+            input {
+                font-size: 14px;
+                width: 90%;
+            }
+
+            .button {
+                font-size: 14px;
+                padding: 10px 20px;
+            }
+
+            #contact-developer {
+                font-size: 12px;
+                padding: 8px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a id="contact-developer" href="https://www.instagram.com/om_kangane07" target="_blank">Contact Developer</a>
+    <div id="game-container">
+        <h1>Jinx Game</h1>
+        <div id="setup">
+            <label for="players">Enter player names (comma-separated):</label><br>
+            <input type="text" id="players" placeholder="e.g., Om, Sandip, Akshay"><br>
+            <button class="button" onclick="startGame()">Start Game</button>
+        </div>
+
+        <div id="gameplay" class="hidden">
+            <h2 id="current-player"></h2>
+            <p id="question-area" class="hidden">
+                Question: <span id="question"></span>
+            </p>
+            <button id="ask-question" class="button" onclick="giveQuestion()">Give Question</button>
+            <button id="flip-coin" class="hidden button" onclick="flipCoin()">Flip Coin</button>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal">
+        <div id="modal-content">
+            <p id="modal-message"></p>
+            <p id="modal-question" class="hidden"></p>
+            <button id="close-modal" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+    <script>
+        let players = [];
+        let currentPlayerIndex = 0;
+        let currentQuestion = "";
+        const questions = [
+    { type: 'mean', text: 'Who is the ugliest person here?' },
+    { type: 'nice', text: 'Who has the best smile?' },
+    { type: 'mean', text: 'Who has the worst fashion sense in this room?' },
+    { type: 'nice', text: 'Who is the funniest person here?' },
+    { type: 'mean', text: 'Who is the most annoying person in this group?' },
+    { type: 'nice', text: 'Who is most likely to brighten your day?' },
+    { type: 'mean', text: 'Who is the most likely to ruin a group photo?' },
+    { type: 'nice', text: 'Who has the kindest heart?' },
+    { type: 'mean', text: 'Who is the most likely to embarrass themselves in public?' },
+    { type: 'nice', text: 'Who has the most contagious laugh?' },
+    { type: 'mean', text: 'Who is the biggest drama queen in the group?' },
+    { type: 'nice', text: 'Who is the best storyteller?' },
+    { type: 'mean', text: 'Who would you least want to be stuck in an elevator with?' },
+    { type: 'nice', text: 'Who is the most creative person here?' },
+    { type: 'mean', text: 'Who is the biggest try-hard in the group?' },
+    { type: 'nice', text: 'Who gives the best advice?' },
+    { type: 'mean', text: 'Who is the most clueless when it comes to personal hygiene?' },
+    { type: 'nice', text: 'Who is the most adventurous in the group?' },
+    { type: 'mean', text: 'Who is the most toxic person here?' },
+    { type: 'nice', text: 'Who is the most reliable in a crisis?' },
+    { type: 'mean', text: 'Who is most likely to talk behind your back?' },
+    { type: 'nice', text: 'Who is the most friendly and talks a lot?' },
+    { type: 'mean', text: 'Who is the most hated person in the group?' },
+    { type: 'nice', text: 'Who is the most understanding person in a group?' },
+    // More mean questions
+    { type: 'mean', text: 'Who is the biggest disappointment in this group?' },
+    { type: 'nice', text: 'Who is the best at keeping secrets?' },
+    { type: 'mean', text: 'Who is the most likely to cause a scene in public?' },
+    { type: 'nice', text: 'Who is the most likely to succeed in life?' },
+    { type: 'mean', text: 'Who is the biggest mess-up in the group?' },
+    { type: 'nice', text: 'Who has the best taste in music?' },
+    { type: 'mean', text: 'Who is the most likely to make everyone uncomfortable?' },
+    { type: 'nice', text: 'Who has the best sense of humor?' },
+    { type: 'mean', text: 'Who would you never trust with a secret?' },
+    { type: 'nice', text: 'Who is the most thoughtful person here?' },
+    { type: 'mean', text: 'Who is the most likely to ruin a good time?' },
+    { type: 'nice', text: 'Who is the most supportive friend?' },
+    { type: 'mean', text: 'Who is the most likely to get dumped first?' },
+    { type: 'nice', text: 'Who is most likely to make a difference in the world?' }
+];
+
+        function startGame() {
+            const input = document.getElementById('players').value;
+            players = input.split(',').map(name => name.trim());
+            if (players.length < 2) {
+                alert('Please enter at least two players!');
+                return;
+            }
+
+            // Easter egg check - Show hidden message if 'OMKAR' is in the list
+            if (players.includes('OMKAR')) {
+                showEasterEgg();
+            }
+
+            document.getElementById('setup').classList.add('hidden');
+            document.getElementById('gameplay').classList.remove('hidden');
+            nextPlayer();
+        }
+
+        function showEasterEgg() {
+            // Show the hidden message when 'OMKAR' joins
+            const modalMessage = 'Jinx Creator Has Joined The Game';
+            document.getElementById('modal-message').innerText = modalMessage;
+            document.getElementById('modal').classList.add('active');
+        }
+
+        let lastPlayerIndex = -1; // Keeps track of the last selected player index
+
+        function nextPlayer() {
+            // Choose a random player but ensure it's not the same as the last player
+            let newPlayerIndex;
+            do {
+                newPlayerIndex = Math.floor(Math.random() * players.length);
+            } while (newPlayerIndex === lastPlayerIndex);
+
+            // Update the last selected player index
+            lastPlayerIndex = newPlayerIndex;
+
+            const playerName = players[newPlayerIndex];
+            document.getElementById('current-player').innerText = `${playerName}'s Turn`;
+            document.getElementById('ask-question').classList.remove('hidden');
+            document.getElementById('question-area').classList.add('hidden');
+            document.getElementById('flip-coin').classList.add('hidden');
+        }
+
+        function giveQuestion() {
+            const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+            currentQuestion = randomQuestion.text;
+            document.getElementById('question').innerText = currentQuestion;
+            document.getElementById('question-area').classList.remove('hidden');
+            document.getElementById('ask-question').classList.add('hidden');
+            document.getElementById('flip-coin').classList.remove('hidden');
+        }
+
+        function flipCoin() {
+            const result = Math.random() < 0.5 ? 'Heads' : 'Tails';
+            const modalMessage = `Coin Result: ${result}`;
+            document.getElementById('modal-message').innerText = modalMessage;
+
+            if (result === 'Heads') {
+                document.getElementById('modal-question').innerText = `Revealed Question: ${currentQuestion}`;
+                document.getElementById('modal-question').classList.remove('hidden');
+            } else {
+                document.getElementById('modal-question').innerText = `Question remains a mystery!`;
+                document.getElementById('modal-question').classList.remove('hidden');
+            }
+
+            document.getElementById('modal').classList.add('active');
+            document.getElementById('question-area').classList.add('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            nextPlayer();
+        }
+    </script>
+</body>
+</html>
