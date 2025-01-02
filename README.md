@@ -1,11 +1,10 @@
-Hi, I'm Omkar—better known as The Genius, Millionaire Playboy, and Legacy Builder. I’m a passionate creator, constantly challenging myself to develop unique projects and games. My personality shines through my jokes, creativity, and ability to bring joy to those around me, even while mastering the art of concealing personal struggles. I'm driven by a vision to improve communication, dominate conversations, and build an influential legacy.
+Hi, I'm Omkar—better known as The Genius. I’m a passionate creator, constantly challenging myself to develop unique projects and games. My personality shines through my jokes, creativity, and ability to bring joy to those around me, even while mastering the art of concealing personal struggles. I'm driven by a vision to improve communication, dominate conversations, and build an influential legacy.
 
 My Beliefs
-A strong believer in Krishna Niti and self-improvement.
+A strong believer self-improvement.
 Focused on skill-building, especially in communication and coding.
 Dedicated to becoming my ideal future self, admired and respected by all.
 Fun Facts
-I’m not a billionaire... yet. But hey, I’m a millionaire!
 People are often drawn to my charm and humor, and I thrive on that attention.
 My latest venture is the offline multiplayer game Jinx, and it’s a masterpiece!
 About Jinx
