@@ -8,7 +8,7 @@ Fun Facts
 People are often drawn to my charm and humor, and I thrive on that attention.
 My latest venture is the offline multiplayer game Jinx, and it’s a masterpiece!
 About Jinx
-Jinx is an offline multiplayer game designed to create suspense, drama, and lots of fun moments among friends. Played on a single device, it thrives on the element of surprise..
+Jinx is an offline multiplayer game designed to create suspense, drama, and lots of fun moments among friends. Played on a single device, it thrives on the element of surprise...
 
 **Game Mechanics**
 Players sit in a circle and pass the device as their turn comes.
