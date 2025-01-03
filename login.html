@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Jinx</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #9600FF, #AEBAF8); /* New background gradient */
+            background-size: cover;
+            color: white;
+        }
+        h2 {
+            font-size: 2.5rem;
+            text-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
+        }
+        .input-container {
+            margin-top: 20px;
+        }
+        input {
+            padding: 12px;
+            margin: 10px;
+            width: 280px;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            text-align: center;
+            outline: none;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+        }
+        button {
+            padding: 12px 30px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #00E5FF, #1200FF); /* New button gradient */
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+        }
+        button:hover {
+            background: linear-gradient(135deg, #1200FF, #00E5FF); /* Hover effect for button */
+            transform: scale(1.1);
+        }
+        .footer {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .footer a {
+            color: #66BB6A;
+            text-decoration: none;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h2>🔒 Welcome to Jinx 🔑</h2>
+    <div class="input-container">
+        <input type="password" id="password" placeholder="Enter the Magic Word">
+        <br>
+        <button onclick="validatePassword()">Unlock Game</button>
+    </div>
+    <script>
+        function validatePassword() {
+            const password = document.getElementById('password').value;
+            const correctPassword = 'your_password_here'; // Replace with your password
+            if (password === correctPassword) {
+                window.location.href = 'index.html'; // Redirect to your game page
+            } else {
+                alert('Oops! That’s not the right password. Try again.');
+            }
+        }
+    </script>
+    <div class="footer">
+        <p>💡 Hint: Think like the creator | Need help? <a href="https://www.instagram.com/om_kangane07" target="_blank">Contact Me</a></p>
+    </div>
+</body>
+</html>
