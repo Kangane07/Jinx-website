@@ -15,17 +15,27 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, #9600FF, #AEBAF8); /* New background gradient */
-            background-size: cover;
+            background: linear-gradient(135deg, #FF3CAC, #784BA0, #2B86C5);
+            background-size: 400% 400%;
+            animation: gradient-animation 10s ease infinite;
             color: white;
         }
+
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
         h2 {
             font-size: 2.5rem;
             text-shadow: 0 3px 6px rgba(0, 0, 0, 0.5);
         }
+
         .input-container {
             margin-top: 20px;
         }
+
         input {
             padding: 12px;
             margin: 10px;
@@ -37,10 +47,11 @@
             outline: none;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
         }
+
         button {
             padding: 12px 30px;
             font-size: 18px;
-            background: linear-gradient(135deg, #00E5FF, #1200FF); /* New button gradient */
+            background: linear-gradient(135deg, #FF3CAC, #784BA0, #2B86C5); /* Button gradient matching the background */
             color: white;
             border: none;
             border-radius: 25px;
@@ -48,10 +59,12 @@
             transition: all 0.3s ease;
             box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
         }
+
         button:hover {
-            background: linear-gradient(135deg, #1200FF, #00E5FF); /* Hover effect for button */
+            background: linear-gradient(135deg, #2B86C5, #784BA0, #FF3CAC); /* Hover effect matching the background gradient */
             transform: scale(1.1);
         }
+
         .footer {
             position: fixed;
             bottom: 20px;
@@ -60,10 +73,12 @@
             font-size: 0.9rem;
             color: rgba(255, 255, 255, 0.7);
         }
+
         .footer a {
             color: #66BB6A;
             text-decoration: none;
         }
+
         .footer a:hover {
             text-decoration: underline;
         }
@@ -72,9 +87,9 @@
 <body>
     <h2> Welcome to Jinx </h2>
     <div class="input-container">
-        <input type="password" id="password" placeholder="Enter the Magic Word">
+        <input type="password" id="password" placeholder="Enter the password">
         <br>
-        <button onclick="validatePassword()">Unlock Game</button>
+        <button onclick="validatePassword()">Game On!</button>
     </div>
     <script>
         const incorrectMessages = [
