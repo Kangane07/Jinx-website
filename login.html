@@ -18,7 +18,6 @@
             background: linear-gradient(135deg, #9600FF, #AEBAF8); /* New background gradient */
             background-size: cover;
             color: white;
-            position: relative;
         }
         h2 {
             font-size: 2.5rem;
@@ -68,36 +67,6 @@
         .footer a:hover {
             text-decoration: underline;
         }
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.5s ease;
-        }
-        .loading-spinner {
-            border: 8px solid #f3f3f3;
-            border-top: 8px solid #66BB6A;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 2s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        @keyframes fadeOut {
-            0% { opacity: 1; }
-            100% { opacity: 0; }
-        }
     </style>
 </head>
 <body>
@@ -107,19 +76,13 @@
         <br>
         <button onclick="validatePassword()">Unlock Game</button>
     </div>
-    <div class="footer">
-        <p>💡 Hint: Think like the creator | Need help? <a href="https://www.instagram.com/om_kangane07" target="_blank">Contact Me</a></p>
-    </div>
-    <div id="loadingOverlay" class="loading-overlay">
-        <div class="loading-spinner"></div>
-    </div>
     <script>
         const incorrectMessages = [
             'Oops! That’s not the right password. Try again, genius!',
             'Wrong password, try harder, champ!',
             'Not quite right. Keep guessing!',
             'Uh-oh, no access for you! Try again.',
-            'Bhangaar nit taak password ',
+            'Hmm, that’s incorrect. You’re close though!',
         ];
 
         function validatePassword() {
@@ -127,20 +90,17 @@
             const correctPassword = 'Jinx07'; // Replace with your password
             if (password === correctPassword) {
                 document.body.innerHTML = "<h2>Access Granted! 🎉</h2>"; // Success message
-                document.getElementById('loadingOverlay').style.opacity = 1; // Show loading spinner
-
-                // Fade out the page before redirect
                 setTimeout(() => {
-                    document.body.style.animation = "fadeOut 1s forwards";
-                    setTimeout(() => {
-                        window.location.href = 'index.html'; // Redirect to your game page
-                    }, 1000); // Wait for fade-out to complete
-                }, 2000); // Wait for 2 seconds before the transition
+                    window.location.href = 'index.html'; // Redirect to your game page
+                }, 2000); // Wait for 2 seconds before redirecting
             } else {
                 const randomMessage = incorrectMessages[Math.floor(Math.random() * incorrectMessages.length)];
                 alert(randomMessage);
             }
         }
     </script>
+    <div class="footer">
+        <p>💡 Hint: Think like the creator | Need help? <a href="https://www.instagram.com/om_kangane07" target="_blank">Contact Me</a></p>
+    </div>
 </body>
 </html>
