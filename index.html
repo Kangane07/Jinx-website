@@ -160,6 +160,26 @@
         #contact-developer:hover {
             background-color: #ffbb33;
         }
+		/* Footer Styles */
+        footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    background-color: transparent; /* Makes the background transparent */
+    color: #fff; /* Keeps the text color visible */
+    padding: 10px 0;
+    font-size: 14px;
+    text-align: center;
+}
+
+        footer a {
+            color: #fff;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
 
         @media (max-width: 600px) {
             h1, h2 {
@@ -202,6 +222,10 @@
             <button id="flip-coin" class="hidden button" onclick="flipCoin()">Flip Coin</button>
         </div>
     </div>
+	<!-- Footer -->
+    <footer>
+        &copy; 2025 Jinx. All rights reserved. | <a href="privacy-policy.html" target="_blank">Privacy Policy</a>
+    </footer>
 
     <!-- Modal -->
     <div id="modal">
