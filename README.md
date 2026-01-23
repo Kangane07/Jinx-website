@@ -1,27 +1,73 @@
-Hi, I'm Omkar—better known as The Genius. I’m a passionate creator, constantly challenging myself to develop unique projects and games. My personality shines through my jokes, creativity, and ability to bring joy to those around me, even while mastering the art of concealing personal struggles. I'm driven by a vision to improve communication, dominate conversations, and build an influential legacy.
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-My Beliefs
-A strong believer self-improvement.
-Focused on skill-building, especially in communication and coding.
-Dedicated to becoming my ideal future self, admired and respected by all.
-Fun Facts
-People are often drawn to my charm and humor, and I thrive on that attention.
-My latest venture is the offline multiplayer game Jinx, and it’s a masterpiece!
-About Jinx
-Jinx is an offline multiplayer game designed to create suspense, drama, and lots of fun moments among friends. Played on a single device, it thrives on the element of surprise...
+# 🎮 Jinx
 
-**Game Mechanics**
-Players sit in a circle and pass the device as their turn comes.
-A random player is chosen to begin.
-The chosen player secretly reads a question (either mean or nice).
-The player names someone aloud, without revealing the question.
-A coin toss determines the outcome:
-Heads: The question remains a mystery!
-Tails: The question is revealed to all, leading to epic reactions!
-Key Features
-1.Contact Developer: Reach out to me via Instagram @om_kangane07.
-2.Easter Egg: If you add "OMKAR" (in all caps) as a participant, you’ll unlock a hidden message: "Jinx's creator/God joined the game."
-**How to Play**
-1.Gather your friends in a circle.
-2.Pass the device around to take turns.
-3.Embrace the suspense, drama, and laughter that comes with each question!
+Hi, I’m **Omkar** — a passionate creator who enjoys building unique projects and fun experiences.  
+I love experimenting with ideas, mixing creativity with logic, and turning simple concepts into engaging products.
+
+Jinx reflects my interest in **game mechanics, human interaction, and suspense-driven gameplay**.
+
+---
+
+## 🧠 About Jinx
+
+**Jinx** is an offline multiplayer party game designed to create **suspense, drama, and laughter** among friends.  
+It is played on a **single device**, making it perfect for group gatherings without the need for an internet connection.
+
+The core fun of Jinx lies in **not knowing why you were chosen** — and whether the truth will be revealed.
+
+---
+
+## 🎯 Game Mechanics
+
+- All players sit in a circle and pass the device on their turn  
+- A random player is selected to begin  
+- The chosen player secretly reads a question (nice or mean)  
+- They announce a player’s name **without revealing the question**  
+- A coin toss decides the outcome:
+  - **Heads** → The question remains a mystery  
+  - **Tails** → The question is revealed, leading to fun and dramatic reactions  
+
+---
+
+## ✨ Key Features
+
+- 🎲 **Offline Multiplayer** – No internet required  
+- 🪙 **Coin Toss Mechanic** – Builds suspense every round  
+- 📱 **Single Device Gameplay** – Easy and accessible  
+- 🕵️ **Easter Egg** –  
+  Add **OMKAR** (in all caps) as a participant to unlock a hidden message  
+
+---
+
+## ▶️ How to Play
+
+1. Gather your friends in a circle  
+2. Pass the device to take turns  
+3. Read, choose, toss, and react  
+4. Enjoy the suspense, drama, and laughter  
+
+---
+
+## 🎓 Project Context
+
+Jinx was developed as a **college project** to explore:
+- Game logic and flow
+- User engagement through suspense
+- Offline multiplayer interaction
+
+---
+
+## 👤 Developer
+
+**Omkar Kangane**  
+Creator of Jinx 🎮  
+
+📩 Contact Developer:  
+Instagram — **@om_kangane07**
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**.
