@@ -48,7 +48,6 @@
       position: relative;
       z-index: 10;
       width: 100%;
-      margin-bottom: 56px;
     }
 
     h1, h2, h3 {
@@ -233,22 +232,17 @@
     #contact-developer:hover { background-color: #ffbb33; }
 
     footer {
-      position: fixed !important;
-      left: 0;
-      right: 0;
-      bottom: max(8px, env(safe-area-inset-bottom));
+      position: absolute;
+      bottom: 0;
       width: 100%;
       background-color: transparent;
       color: #fff;
-      padding: 8px 0;
+      padding: 10px 0;
       font-size: 14px;
       text-align: center;
-      z-index: 2;
-      pointer-events: none;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
     }
 
-    footer a { color: #fff; text-decoration: none; pointer-events: auto; }
+    footer a { color: #fff; text-decoration: none; }
     footer a:hover { text-decoration: underline; }
 
     @media (max-width: 600px) {
@@ -271,12 +265,12 @@
         <div class="mode-card">
           <h3>📱 Local Mode</h3>
           <p>Everyone plays on one phone by passing the device in a circle.</p>
-          <button id="play-local-btn" data-mode="local" class="button" onclick="showLocalMode()">Play Local</button>
+          <button class="button" onclick="showLocalMode()">Play Local</button>
         </div>
         <div class="mode-card">
           <h3>🌐 Multiplayer Mode</h3>
           <p>Host creates a lobby code and friends join from their own devices.</p>
-          <button id="play-multi-btn" data-mode="multi" class="button secondary" onclick="showMultiplayerMode()">Play Multiplayer</button>
+          <button class="button secondary" onclick="showMultiplayerMode()">Play Multiplayer</button>
         </div>
       </div>
     </div>
@@ -311,6 +305,12 @@
         <label for="server-url"><strong>Advanced: Custom Realtime Server URL</strong></label>
         <input id="server-url" placeholder="https://your-jinx-server.onrender.com" />
         <p style="margin:0;color:#555;font-size:13px;">Leave empty for automatic server selection.</p>
+      <p id="game-hint">Create a lobby or join with code. If server is offline, use Local Mode or set server URL below.</p>
+
+      <div class="mode-card" style="text-align:left; margin-bottom:12px;">
+        <label for="server-url"><strong>Realtime Server URL (optional)</strong></label>
+        <input id="server-url" placeholder="https://your-jinx-server.onrender.com" />
+        <p style="margin:0;color:#555;font-size:13px;">Leave empty to use same website URL.</p>
       </div>
 
       <div id="multiplayer-entry">
@@ -377,34 +377,49 @@
     const mainMenu = document.getElementById('main-menu');
     const localMode = document.getElementById('local-mode');
     const multiplayerMode = document.getElementById('multiplayer-mode');
-    const playLocalBtn = document.getElementById('play-local-btn');
-    const playMultiBtn = document.getElementById('play-multi-btn');
-
-    if (playLocalBtn) {
-      playLocalBtn.addEventListener('click', showLocalMode);
-    }
-
-    if (playMultiBtn) {
-      playMultiBtn.addEventListener('click', showMultiplayerMode);
-    }
-
-    document.addEventListener('click', (event) => {
-      const modeButton = event.target.closest('[data-mode]');
-      if (!modeButton) return;
-
-      const mode = modeButton.getAttribute('data-mode');
-      if (mode === 'local') {
-        showLocalMode();
-      } else if (mode === 'multi') {
-        showMultiplayerMode();
-      }
-    });
 
     function showLocalMode() {
       mainMenu.classList.add('hidden');
       multiplayerMode.classList.add('hidden');
       localMode.classList.remove('hidden');
     }
+
+    function showMultiplayerMode() {
+      mainMenu.classList.add('hidden');
+      localMode.classList.add('hidden');
+      multiplayerMode.classList.remove('hidden');
+      entryError.textContent = "";
+      ensureSocketLoaded();
+    }
+
+    function backToMenu() {
+      mainMenu.classList.remove('hidden');
+      localMode.classList.add('hidden');
+      multiplayerMode.classList.add('hidden');
+    }
+
+    // -------- Local mode logic --------
+    let players = [];
+    let currentQuestion = '';
+    let roundNumber = 1;
+    let playerQueue = [];
+    let questionQueue = [];
+
+    const questions = [
+      { type: 'spicy', text: 'Who would survive the longest in a zombie apocalypse?' },
+      { type: 'fun', text: 'Who has the best smile?' },
+      { type: 'spicy', text: 'Who is most likely to show up late to their own wedding?' },
+      { type: 'fun', text: 'Who is the funniest person here?' },
+      { type: 'spicy', text: 'Who is most likely to start a dramatic rumor by accident?' },
+      { type: 'fun', text: 'Who is most likely to brighten your day?' },
+      { type: 'spicy', text: 'Who is most likely to forget where they parked?' },
+      { type: 'fun', text: 'Who has the kindest heart?' },
+      { type: 'spicy', text: 'Who is most likely to send a text to the wrong person?' },
+      { type: 'fun', text: 'Who has the most contagious laugh?' },
+      { type: 'spicy', text: 'Who is the biggest drama magnet?' },
+      { type: 'fun', text: 'Who is the best storyteller?' }
+    ];
+
 
     function showMultiplayerMode() {
       mainMenu.classList.add('hidden');
@@ -555,6 +570,8 @@
 
     const entryError = document.getElementById('entry-error');
     const autoServerStatus = document.getElementById('auto-server-status');
+
+    const entryError = document.getElementById('entry-error');
     const multiplayerLobby = document.getElementById('multiplayer-lobby');
     const codeBadge = document.getElementById('code-badge');
     const multiRoundBadge = document.getElementById('multi-round-badge');
@@ -573,6 +590,10 @@
       const input = document.getElementById('server-url').value.trim();
       if (!input) {
         return '';
+    function normalizedServerUrl() {
+      const input = document.getElementById('server-url').value.trim();
+      if (!input) {
+        return window.location.origin;
       }
       return input.replace(/\/$/, '');
     }
@@ -641,6 +662,36 @@
       };
 
       tryNext();
+    function ensureSocketLoaded() {
+      const targetUrl = normalizedServerUrl();
+
+      if (socketReady && socketServerUrl === targetUrl && socket) {
+        return;
+      }
+
+      if (socket && socketServerUrl !== targetUrl) {
+        socket.disconnect();
+        socket = null;
+        socketReady = false;
+      }
+
+      if (socketScriptInjectedUrl !== targetUrl) {
+        const script = document.createElement('script');
+        script.src = `${targetUrl}/socket.io/socket.io.js`;
+        script.onload = () => {
+          socketScriptInjectedUrl = targetUrl;
+          socketReady = true;
+          setupSocket(targetUrl);
+        };
+        script.onerror = () => {
+          entryError.textContent = 'Realtime server not available. Use Local Mode or run/start a server URL.';
+        };
+        document.head.appendChild(script);
+        return;
+      }
+
+      socketReady = true;
+      setupSocket(targetUrl);
     }
 
     function setupSocket(serverUrl) {
@@ -660,6 +711,10 @@
       socket.on('connect_error', () => {
         entryError.textContent = 'Realtime connection failed. We will try fallback server if available.';
         autoServerStatus.textContent = '';
+      });
+
+      socket.on('connect_error', () => {
+        entryError.textContent = 'Cannot connect to realtime server. Use Local Mode or check server URL.';
       });
 
       socket.on('lobby_state', (state) => {
@@ -683,7 +738,9 @@
               return;
             }
             entryError.textContent = '';
-            autoServerStatus.textContent = `Connected to: ${socketServerUrl}`;
+        autoServerStatus.textContent = `Connected to: ${socketServerUrl}`;
+            }
+            entryError.textContent = '';
             lobbyState = response.state;
             renderMultiplayer();
           });
@@ -698,7 +755,21 @@
               return;
             }
             entryError.textContent = '';
-            autoServerStatus.textContent = `Connected to: ${socketServerUrl}`;
+            lobbyState = response.state;
+            renderMultiplayer();
+          });
+        });
+
+        document.getElementById('join-lobby-btn').addEventListener('click', () => {
+          const name = document.getElementById('join-name').value.trim();
+          const code = document.getElementById('join-code').value.trim().toUpperCase();
+          socket.emit('join_lobby', { name, code }, (response) => {
+            if (!response.ok) {
+              entryError.textContent = response.error;
+              return;
+            }
+            entryError.textContent = '';
+        autoServerStatus.textContent = `Connected to: ${socketServerUrl}`;
             lobbyState = response.state;
             renderMultiplayer();
           });
