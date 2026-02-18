@@ -299,7 +299,13 @@
 
     <div id="multiplayer-mode" class="hidden">
       <h2>Realtime Multiplayer (Beta)</h2>
-      <p id="game-hint">Create a lobby or join with code. This mode needs the Node server running.</p>
+      <p id="game-hint">Create a lobby or join with code. If server is offline, use Local Mode or set server URL below.</p>
+
+      <div class="mode-card" style="text-align:left; margin-bottom:12px;">
+        <label for="server-url"><strong>Realtime Server URL (optional)</strong></label>
+        <input id="server-url" placeholder="https://your-jinx-server.onrender.com" />
+        <p style="margin:0;color:#555;font-size:13px;">Leave empty to use same website URL.</p>
+      </div>
 
       <div id="multiplayer-entry">
         <div class="mode-card">
@@ -375,6 +381,7 @@
       mainMenu.classList.add('hidden');
       localMode.classList.add('hidden');
       multiplayerMode.classList.remove('hidden');
+      entryError.textContent = "";
       ensureSocketLoaded();
     }
 
@@ -509,6 +516,9 @@
     let socket = null;
     let myId = null;
     let lobbyState = null;
+    let socketServerUrl = '';
+    let socketScriptInjectedUrl = '';
+    let multiplayerControlsBound = false;
 
     const entryError = document.getElementById('entry-error');
     const multiplayerLobby = document.getElementById('multiplayer-lobby');
@@ -525,22 +535,53 @@
     const coinText = document.getElementById('coin-text');
     const statusText = document.getElementById('status-text');
 
-    function ensureSocketLoaded() {
-      if (socketReady) return;
-      const script = document.createElement('script');
-      script.src = '/socket.io/socket.io.js';
-      script.onload = () => {
-        socketReady = true;
-        setupSocket();
-      };
-      script.onerror = () => {
-        entryError.textContent = 'Realtime server not available. Start server with npm start.';
-      };
-      document.head.appendChild(script);
+    function normalizedServerUrl() {
+      const input = document.getElementById('server-url').value.trim();
+      if (!input) {
+        return window.location.origin;
+      }
+      return input.replace(/\/$/, '');
     }
 
-    function setupSocket() {
-      socket = io();
+    function ensureSocketLoaded() {
+      const targetUrl = normalizedServerUrl();
+
+      if (socketReady && socketServerUrl === targetUrl && socket) {
+        return;
+      }
+
+      if (socket && socketServerUrl !== targetUrl) {
+        socket.disconnect();
+        socket = null;
+        socketReady = false;
+      }
+
+      if (socketScriptInjectedUrl !== targetUrl) {
+        const script = document.createElement('script');
+        script.src = `${targetUrl}/socket.io/socket.io.js`;
+        script.onload = () => {
+          socketScriptInjectedUrl = targetUrl;
+          socketReady = true;
+          setupSocket(targetUrl);
+        };
+        script.onerror = () => {
+          entryError.textContent = 'Realtime server not available. Use Local Mode or run/start a server URL.';
+        };
+        document.head.appendChild(script);
+        return;
+      }
+
+      socketReady = true;
+      setupSocket(targetUrl);
+    }
+
+    function setupSocket(serverUrl) {
+      if (socket) {
+        socket.disconnect();
+      }
+
+      socketServerUrl = serverUrl;
+      socket = io(serverUrl, { transports: ['websocket', 'polling'] });
 
       socket.on('connect', () => {
         myId = socket.id;
@@ -548,7 +589,7 @@
       });
 
       socket.on('connect_error', () => {
-        entryError.textContent = 'Cannot connect to realtime server. Start server with npm start.';
+        entryError.textContent = 'Cannot connect to realtime server. Use Local Mode or check server URL.';
       });
 
       socket.on('lobby_state', (state) => {
@@ -556,37 +597,41 @@
         renderMultiplayer();
       });
 
-      startBtn.addEventListener('click', () => socket.emit('start_game'));
-      askBtn.addEventListener('click', () => socket.emit('ask_question'));
-      flipBtn.addEventListener('click', () => socket.emit('flip_coin'));
-      nextBtn.addEventListener('click', () => socket.emit('next_turn'));
+      if (!multiplayerControlsBound) {
+        multiplayerControlsBound = true;
 
-      document.getElementById('create-lobby-btn').addEventListener('click', () => {
-        const name = document.getElementById('host-name').value.trim();
-        socket.emit('create_lobby', { name }, (response) => {
-          if (!response.ok) {
-            entryError.textContent = response.error;
-            return;
-          }
-          entryError.textContent = '';
-          lobbyState = response.state;
-          renderMultiplayer();
-        });
-      });
+        startBtn.addEventListener('click', () => socket.emit('start_game'));
+        askBtn.addEventListener('click', () => socket.emit('ask_question'));
+        flipBtn.addEventListener('click', () => socket.emit('flip_coin'));
+        nextBtn.addEventListener('click', () => socket.emit('next_turn'));
 
-      document.getElementById('join-lobby-btn').addEventListener('click', () => {
-        const name = document.getElementById('join-name').value.trim();
-        const code = document.getElementById('join-code').value.trim().toUpperCase();
-        socket.emit('join_lobby', { name, code }, (response) => {
-          if (!response.ok) {
-            entryError.textContent = response.error;
-            return;
-          }
-          entryError.textContent = '';
-          lobbyState = response.state;
-          renderMultiplayer();
+        document.getElementById('create-lobby-btn').addEventListener('click', () => {
+          const name = document.getElementById('host-name').value.trim();
+          socket.emit('create_lobby', { name }, (response) => {
+            if (!response.ok) {
+              entryError.textContent = response.error;
+              return;
+            }
+            entryError.textContent = '';
+            lobbyState = response.state;
+            renderMultiplayer();
+          });
         });
-      });
+
+        document.getElementById('join-lobby-btn').addEventListener('click', () => {
+          const name = document.getElementById('join-name').value.trim();
+          const code = document.getElementById('join-code').value.trim().toUpperCase();
+          socket.emit('join_lobby', { name, code }, (response) => {
+            if (!response.ok) {
+              entryError.textContent = response.error;
+              return;
+            }
+            entryError.textContent = '';
+            lobbyState = response.state;
+            renderMultiplayer();
+          });
+        });
+      }
     }
 
     function playerById(id) {
