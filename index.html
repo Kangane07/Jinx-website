@@ -299,6 +299,12 @@
 
     <div id="multiplayer-mode" class="hidden">
       <h2>Realtime Multiplayer (Beta)</h2>
+      <p id="game-hint">Just tap Multiplayer and we auto-connect to available realtime server. If needed, use advanced server URL override.</p>
+
+      <div class="mode-card" style="text-align:left; margin-bottom:12px;">
+        <label for="server-url"><strong>Advanced: Custom Realtime Server URL</strong></label>
+        <input id="server-url" placeholder="https://your-jinx-server.onrender.com" />
+        <p style="margin:0;color:#555;font-size:13px;">Leave empty for automatic server selection.</p>
       <p id="game-hint">Create a lobby or join with code. If server is offline, use Local Mode or set server URL below.</p>
 
       <div class="mode-card" style="text-align:left; margin-bottom:12px;">
@@ -322,6 +328,7 @@
       </div>
 
       <p id="entry-error" class="result"></p>
+      <p id="auto-server-status" class="result"></p>
 
       <div id="multiplayer-lobby" class="hidden">
         <span id="code-badge" class="badge"></span>
@@ -376,6 +383,43 @@
       multiplayerMode.classList.add('hidden');
       localMode.classList.remove('hidden');
     }
+
+    function showMultiplayerMode() {
+      mainMenu.classList.add('hidden');
+      localMode.classList.add('hidden');
+      multiplayerMode.classList.remove('hidden');
+      entryError.textContent = "";
+      ensureSocketLoaded();
+    }
+
+    function backToMenu() {
+      mainMenu.classList.remove('hidden');
+      localMode.classList.add('hidden');
+      multiplayerMode.classList.add('hidden');
+    }
+
+    // -------- Local mode logic --------
+    let players = [];
+    let currentQuestion = '';
+    let roundNumber = 1;
+    let playerQueue = [];
+    let questionQueue = [];
+
+    const questions = [
+      { type: 'spicy', text: 'Who would survive the longest in a zombie apocalypse?' },
+      { type: 'fun', text: 'Who has the best smile?' },
+      { type: 'spicy', text: 'Who is most likely to show up late to their own wedding?' },
+      { type: 'fun', text: 'Who is the funniest person here?' },
+      { type: 'spicy', text: 'Who is most likely to start a dramatic rumor by accident?' },
+      { type: 'fun', text: 'Who is most likely to brighten your day?' },
+      { type: 'spicy', text: 'Who is most likely to forget where they parked?' },
+      { type: 'fun', text: 'Who has the kindest heart?' },
+      { type: 'spicy', text: 'Who is most likely to send a text to the wrong person?' },
+      { type: 'fun', text: 'Who has the most contagious laugh?' },
+      { type: 'spicy', text: 'Who is the biggest drama magnet?' },
+      { type: 'fun', text: 'Who is the best storyteller?' }
+    ];
+
 
     function showMultiplayerMode() {
       mainMenu.classList.add('hidden');
@@ -519,6 +563,13 @@
     let socketServerUrl = '';
     let socketScriptInjectedUrl = '';
     let multiplayerControlsBound = false;
+    const AUTO_SERVER_CANDIDATES = [
+      window.location.origin,
+      'https://jinx-realtime.onrender.com'
+    ];
+
+    const entryError = document.getElementById('entry-error');
+    const autoServerStatus = document.getElementById('auto-server-status');
 
     const entryError = document.getElementById('entry-error');
     const multiplayerLobby = document.getElementById('multiplayer-lobby');
@@ -535,6 +586,10 @@
     const coinText = document.getElementById('coin-text');
     const statusText = document.getElementById('status-text');
 
+    function normalizedCustomServerUrl() {
+      const input = document.getElementById('server-url').value.trim();
+      if (!input) {
+        return '';
     function normalizedServerUrl() {
       const input = document.getElementById('server-url').value.trim();
       if (!input) {
@@ -543,6 +598,70 @@
       return input.replace(/\/$/, '');
     }
 
+    function candidateServerUrls() {
+      const custom = normalizedCustomServerUrl();
+      if (custom) {
+        return [custom];
+      }
+      return AUTO_SERVER_CANDIDATES;
+    }
+
+    function loadSocketScriptFrom(targetUrl, onSuccess, onError) {
+      if (socketScriptInjectedUrl === targetUrl && window.io) {
+        onSuccess();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = `${targetUrl}/socket.io/socket.io.js`;
+      script.onload = () => {
+        socketScriptInjectedUrl = targetUrl;
+        onSuccess();
+      };
+      script.onerror = onError;
+      document.head.appendChild(script);
+    }
+
+    function ensureSocketLoaded() {
+      const candidates = candidateServerUrls();
+      let currentIndex = 0;
+
+      const tryNext = () => {
+        if (currentIndex >= candidates.length) {
+          entryError.textContent = 'No realtime server is reachable right now. You can still play Local Mode instantly.';
+          autoServerStatus.textContent = '';
+          return;
+        }
+
+        const targetUrl = candidates[currentIndex];
+        currentIndex += 1;
+
+        autoServerStatus.textContent = `Connecting multiplayer to: ${targetUrl}`;
+
+        if (socketReady && socketServerUrl === targetUrl && socket) {
+          autoServerStatus.textContent = `Connected to: ${targetUrl}`;
+          return;
+        }
+
+        if (socket && socketServerUrl !== targetUrl) {
+          socket.disconnect();
+          socket = null;
+          socketReady = false;
+        }
+
+        loadSocketScriptFrom(
+          targetUrl,
+          () => {
+            socketReady = true;
+            setupSocket(targetUrl);
+          },
+          () => {
+            tryNext();
+          }
+        );
+      };
+
+      tryNext();
     function ensureSocketLoaded() {
       const targetUrl = normalizedServerUrl();
 
@@ -586,6 +705,12 @@
       socket.on('connect', () => {
         myId = socket.id;
         entryError.textContent = '';
+        autoServerStatus.textContent = `Connected to: ${socketServerUrl}`;
+      });
+
+      socket.on('connect_error', () => {
+        entryError.textContent = 'Realtime connection failed. We will try fallback server if available.';
+        autoServerStatus.textContent = '';
       });
 
       socket.on('connect_error', () => {
@@ -613,6 +738,9 @@
               return;
             }
             entryError.textContent = '';
+        autoServerStatus.textContent = `Connected to: ${socketServerUrl}`;
+            }
+            entryError.textContent = '';
             lobbyState = response.state;
             renderMultiplayer();
           });
@@ -627,6 +755,21 @@
               return;
             }
             entryError.textContent = '';
+            lobbyState = response.state;
+            renderMultiplayer();
+          });
+        });
+
+        document.getElementById('join-lobby-btn').addEventListener('click', () => {
+          const name = document.getElementById('join-name').value.trim();
+          const code = document.getElementById('join-code').value.trim().toUpperCase();
+          socket.emit('join_lobby', { name, code }, (response) => {
+            if (!response.ok) {
+              entryError.textContent = response.error;
+              return;
+            }
+            entryError.textContent = '';
+        autoServerStatus.textContent = `Connected to: ${socketServerUrl}`;
             lobbyState = response.state;
             renderMultiplayer();
           });
