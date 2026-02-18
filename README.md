@@ -25,8 +25,8 @@ The core fun of Jinx lies in **not knowing why you were chosen** — and whether
 - The chosen player secretly reads a question (nice or mean)  
 - They announce a player’s name **without revealing the question**  
 - A coin toss decides the outcome:
-  - **Heads** → The question remains a mystery  
-  - **Tails** → The question is revealed, leading to fun and dramatic reactions  
+  - **Heads** →  The question is revealed, leading to fun and dramatic reactions.
+  - **Tails** → The question remains a mystery.
 
 ---
 
