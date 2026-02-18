@@ -110,3 +110,44 @@ For mobile/cross-device play, easiest setup:
 2. Open the same `index.html` on phones.
 3. In Multiplayer Mode, set **Realtime Server URL** to your deployed backend URL.
 4. Host creates lobby code, others join with code.
+
+
+## 🔀 Merge Conflicts (Current vs Incoming) — What to choose
+
+If GitHub asks **Current** vs **Incoming** for `index.html`:
+
+- **Current** = code already in `main`.
+- **Incoming** = code from your PR branch.
+
+For the button/footer fixes, prefer **Incoming** for conflict chunks that include:
+- `footer { position: fixed ... pointer-events ... }`
+- `id="play-local-btn"` and `id="play-multi-btn"`
+- JS listeners around `showLocalMode()` / `showMultiplayerMode()`
+
+### Why it can look "same as before" after merge
+This usually happens when conflict blocks were resolved with the wrong side in one chunk, so old behavior comes back.
+
+### Safer method (recommended)
+Resolve conflicts locally (not in GitHub UI):
+
+```bash
+git fetch origin
+git checkout <your-branch>
+git rebase origin/main
+# resolve conflicts in editor, keep the correct mixed result
+git add index.html
+git rebase --continue
+git push --force-with-lease
+```
+
+Then test before merging:
+
+```bash
+python3 -m http.server 8013
+# open http://localhost:8013/index.html
+```
+
+Expected checks:
+- Footer stays at the bottom.
+- **Play Local** opens Local Mode.
+- **Play Multiplayer** opens Multiplayer Mode.
