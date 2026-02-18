@@ -91,5 +91,11 @@ npm start
 ```
 
 Then open:
-- `http://localhost:3000/index.html` (local single-device mode)
-- `http://localhost:3000/multiplayer.html` (realtime mode)
+- `http://localhost:3000/index.html` (main menu with both Local and Multiplayer modes)
+
+
+## 🧭 Main Menu
+
+The game now starts with a main menu where players choose:
+- **Local Mode** (single device pass-and-play)
+- **Multiplayer Mode** (host lobby + friends join by code)
