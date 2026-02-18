@@ -817,6 +817,12 @@
         return;
       }
 
+      if (action?.type === 'remove_player') {
+        if (!isHost || lobbyState.started || action.targetId === lobbyState.hostId) return;
+        removePlayer(action.targetId);
+        return;
+      }
+
       renderMultiplayer();
       broadcastLobbyState();
     }
