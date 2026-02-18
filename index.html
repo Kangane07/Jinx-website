@@ -199,6 +199,34 @@
       margin-top: 12px;
     }
 
+    .game-stage {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #f9faff;
+      border: 1px solid #e2e6ff;
+    }
+
+    .game-stage h3 {
+      margin-bottom: 8px;
+    }
+
+    .answer-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: end;
+      margin: 10px 0;
+    }
+
+    .answer-row select {
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+      width: 100%;
+    }
+
     #modal {
       position: fixed;
       top: 0;
@@ -350,29 +378,51 @@
       <div id="multiplayer-lobby" class="hidden">
         <span id="code-badge" class="badge"></span>
         <span id="multi-round-badge" class="badge"></span>
-        <div>
-          <button id="copy-lobby-btn" class="button secondary">Copy Lobby Code</button>
-          <button id="share-lobby-btn" class="button">Share Lobby</button>
+
+        <div id="multiplayer-waiting">
+          <div>
+            <button id="copy-lobby-btn" class="button secondary">Copy Lobby Code</button>
+            <button id="share-lobby-btn" class="button">Share Lobby</button>
+          </div>
+
+          <div class="status">
+            <strong>Turn:</strong> <span id="turn-text">Waiting...</span><br />
+            <strong>Host:</strong> <span id="host-text">-</span>
+          </div>
+
+          <h3>Players</h3>
+          <ul id="players-list" class="players-list"></ul>
+
+          <div>
+            <button id="start-btn" class="button secondary hidden">Start Game</button>
+          </div>
         </div>
 
-        <div class="status">
-          <strong>Turn:</strong> <span id="turn-text">Waiting...</span><br />
-          <strong>Host:</strong> <span id="host-text">-</span>
+        <div id="multiplayer-game" class="game-stage hidden">
+          <h3>Game Screen</h3>
+          <div class="status">
+            <strong>Turn:</strong> <span id="turn-text-game">Waiting...</span><br />
+            <strong>Host:</strong> <span id="host-text-game">-</span>
+          </div>
+
+          <div>
+            <button id="ask-btn" class="button">Give Question</button>
+            <button id="flip-btn" class="button">Flip Coin</button>
+            <button id="next-btn" class="button warning">Next Turn</button>
+          </div>
+
+          <div class="answer-row">
+            <select id="answer-player-select">
+              <option value="">Choose player name as your answer</option>
+            </select>
+            <button id="answer-btn" class="button secondary">Answer Name</button>
+          </div>
+
+          <div id="answer-text" class="result"></div>
+          <div id="question-text" class="question"></div>
+          <div id="coin-text" class="result"></div>
+          <div id="status-text" class="result"></div>
         </div>
-
-        <h3>Players</h3>
-        <ul id="players-list" class="players-list"></ul>
-
-        <div>
-          <button id="start-btn" class="button secondary hidden">Start Game</button>
-          <button id="ask-btn" class="button">Give Question</button>
-          <button id="flip-btn" class="button">Flip Coin</button>
-          <button id="next-btn" class="button warning">Next Turn</button>
-        </div>
-
-        <div id="question-text" class="question"></div>
-        <div id="coin-text" class="result"></div>
-        <div id="status-text" class="result"></div>
       </div>
 
       <div class="section-actions">
@@ -588,6 +638,13 @@
     const statusText = document.getElementById('status-text');
     const copyLobbyBtn = document.getElementById('copy-lobby-btn');
     const shareLobbyBtn = document.getElementById('share-lobby-btn');
+    const multiplayerWaiting = document.getElementById('multiplayer-waiting');
+    const multiplayerGame = document.getElementById('multiplayer-game');
+    const turnTextGame = document.getElementById('turn-text-game');
+    const hostTextGame = document.getElementById('host-text-game');
+    const answerPlayerSelect = document.getElementById('answer-player-select');
+    const answerBtn = document.getElementById('answer-btn');
+    const answerText = document.getElementById('answer-text');
 
     function randomLobbyCode() {
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -707,6 +764,8 @@
         lobbyState.currentQuestion = '';
         lobbyState.coinResult = '';
         lobbyState.questionVisible = false;
+        lobbyState.answerByPlayerId = '';
+        lobbyState.answerByPlayerName = '';
         refillTurnPool();
       }
 
@@ -716,10 +775,21 @@
         lobbyState.questionAsked = true;
         lobbyState.coinResult = '';
         lobbyState.questionVisible = false;
+        lobbyState.answerByPlayerId = '';
+        lobbyState.answerByPlayerName = '';
+      }
+
+      if (action?.type === 'answer_player') {
+        if (!lobbyState.started || !isTurn || !lobbyState.questionAsked || lobbyState.coinResult) return;
+        const targetId = String(action.targetId || '');
+        const target = lobbyState.players.find((player) => player.id === targetId);
+        if (!target) return;
+        lobbyState.answerByPlayerId = target.id;
+        lobbyState.answerByPlayerName = target.name;
       }
 
       if (action === 'flip_coin') {
-        if (!lobbyState.started || !isTurn || !lobbyState.questionAsked || lobbyState.coinResult) return;
+        if (!lobbyState.started || !isTurn || !lobbyState.questionAsked || lobbyState.coinResult || !lobbyState.answerByPlayerId) return;
         lobbyState.coinResult = Math.random() < 0.5 ? 'Heads' : 'Tails';
         lobbyState.questionVisible = lobbyState.coinResult === 'Heads';
       }
@@ -737,6 +807,14 @@
         lobbyState.currentQuestion = '';
         lobbyState.coinResult = '';
         lobbyState.questionVisible = false;
+        lobbyState.answerByPlayerId = '';
+        lobbyState.answerByPlayerName = '';
+      }
+
+      if (action?.type === 'remove_player') {
+        if (!isHost || lobbyState.started || action.targetId === lobbyState.hostId) return;
+        removePlayer(action.targetId);
+        return;
       }
 
       if (action?.type === 'remove_player') {
@@ -810,6 +888,8 @@
           currentQuestion: '',
           coinResult: '',
           questionVisible: false,
+          answerByPlayerId: '',
+          answerByPlayerName: '',
           turnPool: []
         };
         entryError.textContent = '';
@@ -904,6 +984,11 @@ ${shareUrl}`);
       askBtn.addEventListener('click', () => sendAction('ask_question'));
       flipBtn.addEventListener('click', () => sendAction('flip_coin'));
       nextBtn.addEventListener('click', () => sendAction('next_turn'));
+      answerBtn.addEventListener('click', () => {
+        const targetId = answerPlayerSelect.value;
+        if (!targetId) return;
+        sendAction({ type: 'answer_player', targetId });
+      });
       copyLobbyBtn.addEventListener('click', copyLobbyCode);
       shareLobbyBtn.addEventListener('click', shareLobby);
 
@@ -916,6 +1001,11 @@ ${shareUrl}`);
         const name = document.getElementById('join-name').value.trim();
         const code = document.getElementById('join-code').value.trim().toUpperCase();
         joinHostLobby(name, code);
+      });
+
+      answerPlayerSelect.addEventListener('change', () => {
+        const canAnswerNow = lobbyState && lobbyState.started && isMyTurn() && lobbyState.questionAsked && !lobbyState.coinResult;
+        answerBtn.disabled = !canAnswerNow || !answerPlayerSelect.value;
       });
     }
 
@@ -979,16 +1069,38 @@ ${shareUrl}`);
       }
 
       startBtn.classList.toggle('hidden', !(isHost() && !lobbyState.started && lobbyState.players.length >= 2));
+      multiplayerWaiting.classList.toggle('hidden', lobbyState.started);
+      multiplayerGame.classList.toggle('hidden', !lobbyState.started);
+
+      const turnMessage = lobbyState.started
+        ? `${currentTurnPlayer()?.name || 'Unknown'} is playing`
+        : 'Waiting for host to start the game';
+      turnTextGame.textContent = turnMessage;
+      hostTextGame.textContent = host ? host.name : 'Unknown';
+
       askBtn.classList.toggle('hidden', !lobbyState.started);
       flipBtn.classList.toggle('hidden', !lobbyState.started);
       nextBtn.classList.toggle('hidden', !lobbyState.started);
 
       askBtn.disabled = !(lobbyState.started && isMyTurn() && !lobbyState.questionAsked);
-      flipBtn.disabled = !(lobbyState.started && isMyTurn() && lobbyState.questionAsked && !lobbyState.coinResult);
+      const canAnswer = lobbyState.started && isMyTurn() && lobbyState.questionAsked && !lobbyState.coinResult;
+      answerPlayerSelect.disabled = !canAnswer;
+      answerBtn.disabled = !canAnswer || !answerPlayerSelect.value;
+      flipBtn.disabled = !(canAnswer && !!lobbyState.answerByPlayerId);
       nextBtn.disabled = !(lobbyState.started && lobbyState.coinResult && (isMyTurn() || isHost()));
+
+      answerPlayerSelect.innerHTML = '<option value="">Choose player name as your answer</option>';
+      lobbyState.players.forEach((player) => {
+        const option = document.createElement('option');
+        option.value = player.id;
+        option.textContent = player.name;
+        if (player.id === lobbyState.answerByPlayerId) option.selected = true;
+        answerPlayerSelect.appendChild(option);
+      });
 
       if (!lobbyState.started) {
         questionText.textContent = '';
+        answerText.textContent = '';
         coinText.textContent = '';
         return;
       }
@@ -996,10 +1108,14 @@ ${shareUrl}`);
       if (lobbyState.questionAsked) {
         questionText.textContent = lobbyState.questionVisible
           ? `Question: ${lobbyState.currentQuestion}`
-          : 'Question selected. Toss decides if it is revealed.';
+          : 'Question selected. Answer with a player name, then toss the coin.';
       } else {
         questionText.textContent = '';
       }
+
+      answerText.textContent = lobbyState.answerByPlayerName
+        ? `Chosen answer: ${lobbyState.answerByPlayerName}`
+        : (lobbyState.questionAsked ? 'Waiting for active player to answer with a name.' : '');
 
       if (lobbyState.coinResult) {
         coinText.textContent = lobbyState.coinResult === 'Heads'
