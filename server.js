@@ -38,6 +38,10 @@ const questions = [
 
 const lobbies = new Map();
 
+function randomId(length = 16) {
+  return Math.random().toString(36).slice(2, 2 + length);
+}
+
 app.use(express.static(path.join(__dirname)));
 
 app.get('/health', (_req, res) => {
@@ -76,6 +80,10 @@ function lobbyStateForClient(lobby) {
     coinResult: lobby.coinResult,
     questionVisible: lobby.questionVisible
   };
+}
+
+function findPlayerByKey(lobby, playerKey) {
+  return lobby.players.find((player) => player.key === playerKey);
 }
 
 function broadcastLobby(code) {
@@ -121,6 +129,23 @@ function removePlayerFromLobby(socketId, code) {
   broadcastLobby(code);
 }
 
+function removePlayerById(code, targetId) {
+  const lobby = lobbies.get(code);
+  if (!lobby) return;
+
+  const target = lobby.players.find((player) => player.id === targetId);
+  if (!target) return;
+
+  const targetSocket = io.sockets.sockets.get(targetId);
+  if (targetSocket) {
+    targetSocket.leave(code);
+    targetSocket.data.lobbyCode = null;
+  }
+
+  removePlayerFromLobby(targetId, code);
+  io.to(targetId).emit('player_removed', { targetId });
+}
+
 io.on('connection', (socket) => {
   socket.on('create_lobby', ({ name }, callback) => {
     const cleanName = String(name || '').trim().slice(0, 20);
@@ -133,7 +158,7 @@ io.on('connection', (socket) => {
     const lobby = {
       code,
       hostId: socket.id,
-      players: [{ id: socket.id, name: cleanName }],
+      players: [{ id: socket.id, key: randomId(), name: cleanName }],
       started: false,
       turnIndex: 0,
       round: 1,
@@ -148,7 +173,7 @@ io.on('connection', (socket) => {
     socket.join(code);
     socket.data.lobbyCode = code;
 
-    callback({ ok: true, code, state: lobbyStateForClient(lobby) });
+    callback({ ok: true, code, playerKey: lobby.players[0].key, state: lobbyStateForClient(lobby) });
     broadcastLobby(code);
   });
 
@@ -177,11 +202,36 @@ io.on('connection', (socket) => {
       return;
     }
 
-    lobby.players.push({ id: socket.id, name: cleanName });
+    const player = { id: socket.id, key: randomId(), name: cleanName };
+    lobby.players.push(player);
     socket.join(lobbyCode);
     socket.data.lobbyCode = lobbyCode;
 
-    callback({ ok: true, code: lobbyCode, state: lobbyStateForClient(lobby) });
+    callback({ ok: true, code: lobbyCode, playerKey: player.key, state: lobbyStateForClient(lobby) });
+    broadcastLobby(lobbyCode);
+  });
+
+  socket.on('reconnect_lobby', ({ code, playerKey }, callback) => {
+    const lobbyCode = String(code || '').trim().toUpperCase();
+    const cleanKey = String(playerKey || '').trim();
+
+    const lobby = lobbies.get(lobbyCode);
+    if (!lobby || !cleanKey) {
+      callback({ ok: false, error: 'Lobby session not found.' });
+      return;
+    }
+
+    const player = findPlayerByKey(lobby, cleanKey);
+    if (!player) {
+      callback({ ok: false, error: 'Player session not found.' });
+      return;
+    }
+
+    player.id = socket.id;
+    socket.join(lobbyCode);
+    socket.data.lobbyCode = lobbyCode;
+
+    callback({ ok: true, state: lobbyStateForClient(lobby) });
     broadcastLobby(lobbyCode);
   });
 
@@ -200,6 +250,17 @@ io.on('connection', (socket) => {
     lobby.coinResult = '';
     lobby.questionVisible = false;
     broadcastLobby(code);
+  });
+
+  socket.on('remove_player', ({ targetId }) => {
+    const code = socket.data.lobbyCode;
+    const lobby = lobbies.get(code);
+
+    if (!lobby || lobby.started || lobby.hostId !== socket.id || targetId === socket.id) {
+      return;
+    }
+
+    removePlayerById(code, targetId);
   });
 
   socket.on('ask_question', () => {

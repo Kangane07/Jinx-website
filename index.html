@@ -154,9 +154,31 @@
     .players-list li {
       padding: 6px 0;
       border-bottom: 1px solid #e7e8f2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
     }
 
     .players-list li:last-child { border-bottom: none; }
+
+    .player-name { flex: 1; }
+
+    .mini-btn {
+      border: none;
+      background: var(--danger);
+      color: #fff;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .button[disabled] {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
 
     .result {
       font-size: 16px;
@@ -343,9 +365,9 @@
 
         <div>
           <button id="start-btn" class="button secondary hidden">Start Game</button>
-          <button id="ask-btn" class="button hidden">Give Question</button>
-          <button id="flip-btn" class="button hidden">Flip Coin</button>
-          <button id="next-btn" class="button warning hidden">Next Turn</button>
+          <button id="ask-btn" class="button">Give Question</button>
+          <button id="flip-btn" class="button">Flip Coin</button>
+          <button id="next-btn" class="button warning">Next Turn</button>
         </div>
 
         <div id="question-text" class="question"></div>
@@ -587,6 +609,26 @@
       return question;
     }
 
+    function shuffleArray(items) {
+      const arr = [...items];
+      for (let i = arr.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function refillTurnPool() {
+      if (!lobbyState) return;
+      lobbyState.turnPool = shuffleArray(lobbyState.players.map((player) => player.id));
+      if (!lobbyState.turnPool.length) {
+        lobbyState.turnIndex = 0;
+        return;
+      }
+      const nextId = lobbyState.turnPool.shift();
+      lobbyState.turnIndex = lobbyState.players.findIndex((p) => p.id === nextId);
+    }
+
     function resetPeerState() {
       if (hostConn) {
         try { hostConn.close(); } catch (_) {}
@@ -621,14 +663,32 @@
       if (!lobbyState) return;
       const idx = lobbyState.players.findIndex((p) => p.id === playerId);
       if (idx === -1) return;
+
+      const wasTurnPlayer = lobbyState.players[lobbyState.turnIndex]?.id === playerId;
       lobbyState.players.splice(idx, 1);
-      if (lobbyState.turnIndex >= lobbyState.players.length) {
-        lobbyState.turnIndex = 0;
-      }
+      lobbyState.turnPool = (lobbyState.turnPool || []).filter((id) => id !== playerId);
+
       if (!lobbyState.players.length) {
         resetPeerState();
         return;
       }
+
+      if (lobbyState.hostId === playerId) {
+        lobbyState.hostId = lobbyState.players[0].id;
+      }
+
+      if (wasTurnPlayer && lobbyState.started) {
+        if (!lobbyState.turnPool || !lobbyState.turnPool.length) {
+          lobbyState.round += 1;
+          refillTurnPool();
+        } else {
+          const nextId = lobbyState.turnPool.shift();
+          lobbyState.turnIndex = lobbyState.players.findIndex((p) => p.id === nextId);
+        }
+      } else if (lobbyState.turnIndex >= lobbyState.players.length) {
+        lobbyState.turnIndex = 0;
+      }
+
       renderMultiplayer();
       broadcastLobbyState();
     }
@@ -642,12 +702,12 @@
       if (action === 'start_game') {
         if (!isHost || lobbyState.players.length < 2) return;
         lobbyState.started = true;
-        lobbyState.turnIndex = 0;
         lobbyState.round = 1;
         lobbyState.questionAsked = false;
         lobbyState.currentQuestion = '';
         lobbyState.coinResult = '';
         lobbyState.questionVisible = false;
+        refillTurnPool();
       }
 
       if (action === 'ask_question') {
@@ -666,14 +726,23 @@
 
       if (action === 'next_turn') {
         if (!lobbyState.started || !lobbyState.coinResult || !(isTurn || isHost)) return;
-        lobbyState.turnIndex = (lobbyState.turnIndex + 1) % lobbyState.players.length;
-        if (lobbyState.turnIndex === 0) {
+        if (!lobbyState.turnPool || !lobbyState.turnPool.length) {
           lobbyState.round += 1;
+          refillTurnPool();
+        } else {
+          const nextId = lobbyState.turnPool.shift();
+          lobbyState.turnIndex = lobbyState.players.findIndex((p) => p.id === nextId);
         }
         lobbyState.questionAsked = false;
         lobbyState.currentQuestion = '';
         lobbyState.coinResult = '';
         lobbyState.questionVisible = false;
+      }
+
+      if (action?.type === 'remove_player') {
+        if (!isHost || lobbyState.started || action.targetId === lobbyState.hostId) return;
+        removePlayer(action.targetId);
+        return;
       }
 
       renderMultiplayer();
@@ -698,6 +767,7 @@
             return;
           }
           lobbyState.players.push({ id: conn.peer, name: cleanName });
+          conn.send({ type: 'state', state: lobbyState });
           renderMultiplayer();
           broadcastLobbyState();
           return;
@@ -739,7 +809,8 @@
           questionAsked: false,
           currentQuestion: '',
           coinResult: '',
-          questionVisible: false
+          questionVisible: false,
+          turnPool: []
         };
         entryError.textContent = '';
         autoServerStatus.textContent = 'Lobby created. Share code with friends.';
@@ -882,7 +953,20 @@ ${shareUrl}`);
         if (p.id === lobbyState.hostId) tags.push('Host');
         if (lobbyState.started && lobbyState.turnIndex === index) tags.push('Turn');
         if (p.id === myId) tags.push('You');
-        li.textContent = `${p.name}${tags.length ? ` (${tags.join(', ')})` : ''}`;
+
+        const nameLabel = document.createElement('span');
+        nameLabel.className = 'player-name';
+        nameLabel.textContent = `${p.name}${tags.length ? ` (${tags.join(', ')})` : ''}`;
+        li.appendChild(nameLabel);
+
+        if (isHost() && !lobbyState.started && p.id !== lobbyState.hostId) {
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'mini-btn';
+          removeBtn.textContent = 'Remove';
+          removeBtn.addEventListener('click', () => sendAction({ type: 'remove_player', targetId: p.id }));
+          li.appendChild(removeBtn);
+        }
+
         playersList.appendChild(li);
       });
 
@@ -895,9 +979,13 @@ ${shareUrl}`);
       }
 
       startBtn.classList.toggle('hidden', !(isHost() && !lobbyState.started && lobbyState.players.length >= 2));
-      askBtn.classList.toggle('hidden', !(lobbyState.started && isMyTurn() && !lobbyState.questionAsked));
-      flipBtn.classList.toggle('hidden', !(lobbyState.started && isMyTurn() && lobbyState.questionAsked && !lobbyState.coinResult));
-      nextBtn.classList.toggle('hidden', !(lobbyState.started && lobbyState.coinResult && (isMyTurn() || isHost())));
+      askBtn.classList.toggle('hidden', !lobbyState.started);
+      flipBtn.classList.toggle('hidden', !lobbyState.started);
+      nextBtn.classList.toggle('hidden', !lobbyState.started);
+
+      askBtn.disabled = !(lobbyState.started && isMyTurn() && !lobbyState.questionAsked);
+      flipBtn.disabled = !(lobbyState.started && isMyTurn() && lobbyState.questionAsked && !lobbyState.coinResult);
+      nextBtn.disabled = !(lobbyState.started && lobbyState.coinResult && (isMyTurn() || isHost()));
 
       if (!lobbyState.started) {
         questionText.textContent = '';
