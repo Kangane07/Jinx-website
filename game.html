@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jinx Multiplayer Game</title>
+  <style>
+    :root {
+      --primary: #6c63ff;
+      --danger: #ff5f6d;
+      --bg: #f5f7ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(140deg, #6c63ff, #ffd369);
+    }
+
+    .card {
+      width: min(760px, 96vw);
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.2);
+      padding: 24px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(108, 99, 255, 0.12);
+      color: var(--primary);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-weight: 700;
+      margin-right: 8px;
+      margin-bottom: 10px;
+    }
+
+    .status {
+      border-radius: 10px;
+      background: #f1f5ff;
+      border: 1px solid #dde4ff;
+      padding: 12px;
+      margin-top: 8px;
+    }
+
+    .question {
+      margin-top: 12px;
+      font-size: 20px;
+      font-weight: 700;
+      min-height: 30px;
+      color: #23234a;
+    }
+
+    .result {
+      margin-top: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      min-height: 24px;
+      color: #444;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-top: 12px;
+    }
+
+    button.warning { background: var(--danger); }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Jinx: Game Screen</h1>
+    <span id="code-badge" class="badge"></span>
+    <span id="round-badge" class="badge"></span>
+
+    <div class="status">
+      <strong>Turn:</strong> <span id="turn-text">Loading...</span><br />
+      <strong>Host:</strong> <span id="host-text">-</span>
+    </div>
+
+    <div>
+      <button id="ask-btn" class="hidden">Give Question</button>
+      <button id="flip-btn" class="hidden">Flip Coin</button>
+      <button id="next-btn" class="warning hidden">Next Turn</button>
+      <button id="back-btn">Back to Lobby</button>
+    </div>
+
+    <div class="question" id="question-text"></div>
+    <div class="result" id="coin-text"></div>
+    <div class="result" id="status-text"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const sessionRaw = localStorage.getItem('jinxSession');
+    if (!sessionRaw) {
+      window.location.href = 'multiplayer.html';
+    }
+
+    let session;
+    try {
+      session = JSON.parse(sessionRaw);
+    } catch (_error) {
+      localStorage.removeItem('jinxSession');
+      window.location.href = 'multiplayer.html';
+    }
+
+    const socket = io();
+    let myId = null;
+    let lobbyState = null;
+
+    const codeBadge = document.getElementById('code-badge');
+    const roundBadge = document.getElementById('round-badge');
+    const turnText = document.getElementById('turn-text');
+    const hostText = document.getElementById('host-text');
+    const askBtn = document.getElementById('ask-btn');
+    const flipBtn = document.getElementById('flip-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const questionText = document.getElementById('question-text');
+    const coinText = document.getElementById('coin-text');
+    const statusText = document.getElementById('status-text');
+
+    function playerById(id) {
+      return (lobbyState?.players || []).find((p) => p.id === id);
+    }
+
+    function isMyTurn() {
+      return lobbyState?.turnPlayer?.id === myId;
+    }
+
+    function isHost() {
+      return lobbyState?.hostId === myId;
+    }
+
+    function render() {
+      if (!lobbyState) return;
+
+      if (!lobbyState.started) {
+        window.location.href = 'multiplayer.html';
+        return;
+      }
+
+      codeBadge.textContent = `Lobby: ${lobbyState.code}`;
+      roundBadge.textContent = `Round ${lobbyState.round}`;
+      turnText.textContent = `${lobbyState.turnPlayer?.name || 'Unknown'} is playing`;
+      hostText.textContent = playerById(lobbyState.hostId)?.name || 'Unknown';
+
+      statusText.textContent = isMyTurn() ? 'Your move.' : 'Wait for the active player.';
+
+      askBtn.classList.toggle('hidden', !(isMyTurn() && !lobbyState.questionAsked));
+      flipBtn.classList.toggle('hidden', !(isMyTurn() && lobbyState.questionAsked && !lobbyState.coinResult));
+      nextBtn.classList.toggle('hidden', !(lobbyState.coinResult && (isMyTurn() || isHost())));
+
+      if (lobbyState.questionAsked) {
+        questionText.textContent = lobbyState.questionVisible
+          ? `Question: ${lobbyState.currentQuestion}`
+          : 'Question selected. Toss decides if it is revealed.';
+      } else {
+        questionText.textContent = '';
+      }
+
+      if (lobbyState.coinResult) {
+        coinText.textContent = lobbyState.coinResult === 'Heads'
+          ? 'Coin: Heads — Question is revealed.'
+          : 'Coin: Tails — Question stays a mystery.';
+      } else {
+        coinText.textContent = '';
+      }
+    }
+
+    socket.on('connect', () => {
+      myId = socket.id;
+      socket.emit('reconnect_lobby', session, (response) => {
+        if (!response?.ok) {
+          localStorage.removeItem('jinxSession');
+          window.location.href = 'multiplayer.html';
+          return;
+        }
+        lobbyState = response.state;
+        render();
+      });
+    });
+
+    socket.on('lobby_state', (state) => {
+      lobbyState = state;
+      render();
+    });
+
+    socket.on('player_removed', ({ targetId }) => {
+      if (targetId === myId) {
+        localStorage.removeItem('jinxSession');
+        window.location.href = 'multiplayer.html';
+      }
+    });
+
+    askBtn.addEventListener('click', () => socket.emit('ask_question'));
+    flipBtn.addEventListener('click', () => socket.emit('flip_coin'));
+    nextBtn.addEventListener('click', () => socket.emit('next_turn'));
+    document.getElementById('back-btn').addEventListener('click', () => {
+      window.location.href = 'multiplayer.html';
+    });
+  </script>
+</body>
+</html>
