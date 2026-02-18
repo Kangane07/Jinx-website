@@ -71,3 +71,92 @@ Instagram — **@om_kangane07**
 ## 📄 License
 
 This project is licensed under the **MIT License**.
+
+
+---
+
+## 🌐 Realtime Multiplayer (Beta)
+
+Jinx now includes an experimental **realtime multiplayer mode** for cross-device play:
+
+- One player creates a lobby and shares a 6-character code
+- Friends join from their own devices using the code
+- Turns, questions, and coin results stay synced for everyone
+
+### Run it locally
+
+```bash
+npm install
+npm start
+```
+
+Then open:
+- `http://localhost:3000/index.html` (main menu with both Local and Multiplayer modes)
+
+
+## 🧭 Main Menu
+
+The game now starts with a main menu where players choose:
+- **Local Mode** (single device pass-and-play)
+- **Multiplayer Mode** (host lobby + friends join by code)
+
+
+### Multiplayer now works without running your own server
+
+Realtime mode now uses PeerJS cloud signaling by default, so you can tap **Play Multiplayer** and create/join lobby directly.
+
+You only need internet on both devices. No separate backend process is required in normal usage.
+
+
+## 🔀 Merge Conflicts (Current vs Incoming) — What to choose
+
+If GitHub asks **Current** vs **Incoming** for `index.html`:
+
+- **Current** = code already in `main`.
+- **Incoming** = code from your PR branch.
+
+For the button/footer fixes, prefer **Incoming** for conflict chunks that include:
+- `footer { position: fixed ... pointer-events ... }`
+- `id="play-local-btn"` and `id="play-multi-btn"`
+- JS listeners around `showLocalMode()` / `showMultiplayerMode()`
+
+### Why it can look "same as before" after merge
+This usually happens when conflict blocks were resolved with the wrong side in one chunk, so old behavior comes back.
+
+### Safer method (recommended)
+Resolve conflicts locally (not in GitHub UI):
+
+```bash
+git fetch origin
+git checkout <your-branch>
+git rebase origin/main
+# resolve conflicts in editor, keep the correct mixed result
+git add index.html
+git rebase --continue
+git push --force-with-lease
+```
+
+Then test before merging:
+
+```bash
+python3 -m http.server 8013
+# open http://localhost:8013/index.html
+```
+
+Expected checks:
+- Footer stays at the bottom.
+- **Play Local** opens Local Mode.
+- **Play Multiplayer** opens Multiplayer Mode.
+
+
+## ⚡ Zero-Setup Multiplayer (New)
+
+Multiplayer now uses **PeerJS cloud signaling**, so you do **not** need to run your own backend server in normal usage.
+
+How to use:
+1. Open game and tap **Play Multiplayer**.
+2. Host enters name → **Create Lobby** (instant code generated).
+3. Friends enter name + lobby code → **Join Lobby**.
+4. Use **Copy Lobby Code** or **Share Lobby** (WhatsApp-friendly) to invite quickly.
+
+> Note: This still requires internet for cross-device multiplayer, but no custom server setup in background.

@@ -1,382 +1,926 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jinx Game</title>
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-QTBX2M9ZK4"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jinx Game</title>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-QTBX2M9ZK4"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);} // eslint-disable-line no-unused-vars
+    gtag('js', new Date());
+    gtag('config', 'G-QTBX2M9ZK4');
+  </script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #6c63ff;
+      --secondary-color: #ffd369;
+      --text-color: #333;
+      --button-hover: #4b47c3;
+      --danger: #ff5f6d;
+    }
 
-  gtag('config', 'G-QTBX2M9ZK4');
-</script>
-    <style>
-        /* Premium Color Palette */
-        :root {
-            --primary-color: #6C63FF; /* Soft purple */
-            --secondary-color: #FFD369; /* Warm yellow */
-            --background-color: #F8F9FA; /* Light gray */
-            --text-color: #333; /* Dark text */
-            --button-hover: #4B47C3; /* Darker purple */
-        }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
 
-        /* General Styles */
-        html, body {
-            height: 100%; /* Ensures the background covers the entire screen */
-            margin: 0;
-            padding: 0;
-        }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #6c63ff, #ffd369);
+      color: var(--text-color);
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 12px;
+    }
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, #6C63FF, #FFD369); /* Smooth gradient background */
-            color: var(--text-color);
-            text-align: center;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh; /* Makes sure it stretches to fill the viewport */
-        }
+    #game-container {
+      margin: 20px;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(145deg, #ffffff, #e6e6e6);
+      max-width: 700px;
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      margin-bottom: 56px;
+    }
 
-        #game-container {
-            margin: 20px;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-            background: linear-gradient(145deg, #ffffff, #e6e6e6);
-            max-width: 400px;
-            position: relative;
-            z-index: 10;
-            width: 100%;
-        }
+    h1, h2, h3 {
+      color: var(--primary-color);
+      margin-top: 0;
+    }
 
-        h1, h2 {
-            color: var(--primary-color);
-        }
+    input {
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      width: 90%;
+      font-size: 16px;
+    }
 
-        input {
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            width: 90%;
-            font-size: 16px;
-        }
+    .button {
+      display: inline-block;
+      padding: 12px 20px;
+      margin: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      background-color: var(--primary-color);
+      cursor: pointer;
+      transition: background-color 0.25s ease;
+    }
 
-        .button {
-            display: inline-block;
-            padding: 12px 25px;
-            margin: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            border: none;
-            border-radius: 5px;
-            color: white;
-            background-color: var(--primary-color);
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
+    .button:hover { background-color: var(--button-hover); }
+    .button.secondary { background: #434368; }
+    .button.warning { background: var(--danger); }
 
-        .button:hover {
-            background-color: var(--button-hover);
-        }
+    .hidden { display: none; }
 
-        .hidden {
-            display: none;
-        }
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
 
-        #question-area {
-            font-size: 18px;
-            font-weight: bold;
-            color: var(--secondary-color);
-            margin: 20px 0;
-        }
+    .mode-card {
+      background: #f4f5ff;
+      border: 1px solid #dfe1ff;
+      border-radius: 12px;
+      padding: 14px;
+      text-align: left;
+    }
 
-        /* Modal Styles */
-        #modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            visibility: hidden;
-            opacity: 0;
-            transition: visibility 0s, opacity 0.3s;
-        }
+    .mode-card p {
+      margin: 8px 0;
+      color: #4d4f66;
+      min-height: 60px;
+    }
 
-        #modal.active {
-            visibility: visible;
-            opacity: 1;
-        }
+    #game-hint {
+      font-size: 14px;
+      color: #555;
+      margin-top: 0;
+    }
 
-        #modal-content {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-            max-width: 300px;
-            width: 80%;
-        }
+    #round-indicator,
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(108, 99, 255, 0.12);
+      color: var(--primary-color);
+      font-weight: 600;
+      margin-bottom: 14px;
+      margin-right: 8px;
+    }
 
-        #modal-content p {
-            font-size: 18px;
-            font-weight: bold;
-            margin: 0 0 10px;
-        }
+    #question-area,
+    .question {
+      font-size: 18px;
+      font-weight: bold;
+      color: #2b2b58;
+      margin: 16px 0;
+      min-height: 24px;
+    }
 
-        #close-modal {
-            padding: 10px 20px;
-            background-color: var(--secondary-color);
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
+    .status {
+      background: #f1f5ff;
+      border: 1px solid #dde4ff;
+      border-radius: 10px;
+      padding: 10px;
+      margin: 10px 0;
+    }
 
-        /* Contact Developer Button */
-        #contact-developer {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background-color: var(--secondary-color);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 14px;
-            font-weight: bold;
-            text-decoration: none;
-            z-index: 20;
-        }
+    .players-list {
+      list-style: none;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #f5f7ff;
+      margin: 8px 0 14px;
+      text-align: left;
+    }
 
-        #contact-developer:hover {
-            background-color: #ffbb33;
-        }
-		/* Footer Styles */
-        footer {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    background-color: transparent; /* Makes the background transparent */
-    color: #fff; /* Keeps the text color visible */
-    padding: 10px 0;
-    font-size: 14px;
-    text-align: center;
-}
+    .players-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid #e7e8f2;
+    }
 
-        footer a {
-            color: #fff;
-            text-decoration: none;
-        }
+    .players-list li:last-child { border-bottom: none; }
 
-        footer a:hover {
-            text-decoration: underline;
-        }
+    .result {
+      font-size: 16px;
+      font-weight: 700;
+      margin-top: 8px;
+      color: #444;
+      min-height: 22px;
+    }
 
-        @media (max-width: 600px) {
-            h1, h2 {
-                font-size: 24px;
-            }
+    #multiplayer-entry {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      text-align: left;
+    }
 
-            input {
-                font-size: 14px;
-                width: 90%;
-            }
+    .section-actions {
+      margin-top: 12px;
+    }
 
-            .button {
-                font-size: 14px;
-                padding: 10px 20px;
-            }
+    #modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+      visibility: hidden;
+      opacity: 0;
+      transition: visibility 0s, opacity 0.3s;
+    }
 
-            #contact-developer {
-                font-size: 12px;
-                padding: 8px 15px;
-            }
-        }
-    </style>
+    #modal.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    #modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      max-width: 320px;
+      width: 85%;
+    }
+
+    #close-modal {
+      padding: 10px 20px;
+      background-color: var(--secondary-color);
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #contact-developer {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      background-color: var(--secondary-color);
+      color: white;
+      padding: 10px 16px;
+      border-radius: 5px;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      z-index: 30;
+    }
+
+    #contact-developer:hover { background-color: #ffbb33; }
+
+    footer {
+      position: fixed !important;
+      left: 0;
+      right: 0;
+      bottom: max(8px, env(safe-area-inset-bottom));
+      width: 100%;
+      background-color: transparent;
+      color: #fff;
+      padding: 8px 0;
+      font-size: 14px;
+      text-align: center;
+      z-index: 2;
+      pointer-events: none;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    }
+
+    footer a { color: #fff; text-decoration: none; pointer-events: auto; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      h1, h2 { font-size: 24px; }
+      input { font-size: 14px; width: 95%; }
+      .button { font-size: 14px; padding: 10px 18px; }
+      #contact-developer { font-size: 12px; padding: 8px 12px; }
+    }
+  </style>
 </head>
 <body>
-    <a id="contact-developer" href="https://www.instagram.com/om_kangane07" target="_blank">Contact Developer</a>
-    <div id="game-container">
-        <h1>Jinx Game</h1>
-        <div id="setup">
-            <label for="players">Enter player names (comma-separated):</label><br>
-            <input type="text" id="players" placeholder="e.g., Om, Sandip, Akshay"><br>
-            <button class="button" onclick="startGame()">Start Game</button>
-        </div>
+  <a id="contact-developer" href="https://www.instagram.com/om_kangane07" target="_blank">Contact Developer</a>
 
-        <div id="gameplay" class="hidden">
-            <h2 id="current-player"></h2>
-            <p id="question-area" class="hidden">
-                Question: <span id="question"></span>
-            </p>
-            <button id="ask-question" class="button" onclick="giveQuestion()">Give Question</button>
-            <button id="flip-coin" class="hidden button" onclick="flipCoin()">Flip Coin</button>
+  <div id="game-container">
+    <h1>Jinx Game</h1>
+
+    <div id="main-menu">
+      <p>Choose how you want to play.</p>
+      <div class="menu-grid">
+        <div class="mode-card">
+          <h3>📱 Local Mode</h3>
+          <p>Everyone plays on one phone by passing the device in a circle.</p>
+          <button id="play-local-btn" data-mode="local" class="button" onclick="showLocalMode()">Play Local</button>
         </div>
+        <div class="mode-card">
+          <h3>🌐 Multiplayer Mode</h3>
+          <p>Host creates a lobby code and friends join from their own devices.</p>
+          <button id="play-multi-btn" data-mode="multi" class="button secondary" onclick="showMultiplayerMode()">Play Multiplayer</button>
+        </div>
+      </div>
     </div>
-	<!-- Footer -->
-    <footer>
-        &copy; 2025 Jinx. All rights reserved. | <a href="privacy-policy.html" target="_blank">Privacy Policy</a>
-    </footer>
 
-    <!-- Modal -->
-    <div id="modal">
-        <div id="modal-content">
-            <p id="modal-message"></p>
-            <p id="modal-question" class="hidden"></p>
-            <button id="close-modal" onclick="closeModal()">Close</button>
-        </div>
+    <div id="local-mode" class="hidden">
+      <h2>Local Mode</h2>
+      <div id="setup">
+        <label for="players">Enter player names (comma-separated):</label><br />
+        <input type="text" id="players" placeholder="e.g., Om, Sandip, Akshay" /><br />
+        <p id="game-hint">Tip: Add at least 3 players for maximum suspense.</p>
+        <button class="button" onclick="startLocalGame()">Start Game</button>
+      </div>
+
+      <div id="gameplay" class="hidden">
+        <div id="round-indicator">Round 1</div>
+        <h2 id="current-player"></h2>
+        <p id="question-area" class="hidden">Question: <span id="question"></span></p>
+        <button id="ask-question" class="button" onclick="giveLocalQuestion()">Give Question</button>
+        <button id="flip-coin" class="hidden button" onclick="flipLocalCoin()">Flip Coin</button>
+      </div>
+
+      <div class="section-actions">
+        <button class="button secondary" onclick="backToMenu()">Back to Main Menu</button>
+      </div>
     </div>
-    <script>
-        let players = [];
-        let currentQuestion = "";
-        let lastQuestionIndex = -1;
-        const questions = [
-    { type: 'mean', text: 'Who is the ugliest person here?' },
-    { type: 'nice', text: 'Who has the best smile?' },
-    { type: 'mean', text: 'Who has the worst fashion sense in this room?' },
-    { type: 'nice', text: 'Who is the funniest person here?' },
-    { type: 'mean', text: 'Who is the most annoying person in this group?' },
-    { type: 'nice', text: 'Who is most likely to brighten your day?' },
-    { type: 'mean', text: 'Who is the most likely to ruin a group photo?' },
-    { type: 'nice', text: 'Who has the kindest heart?' },
-    { type: 'mean', text: 'Who is the most likely to embarrass themselves in public?' },
-    { type: 'nice', text: 'Who has the most contagious laugh?' },
-    { type: 'mean', text: 'Who is the biggest drama queen in the group?' },
-    { type: 'nice', text: 'Who is the best storyteller?' },
-    { type: 'mean', text: 'Who would you least want to be stuck in an elevator with?' },
-    { type: 'nice', text: 'Who is the most creative person here?' },
-    { type: 'mean', text: 'Who is the biggest try-hard in the group?' },
-    { type: 'nice', text: 'Who gives the best advice?' },
-    { type: 'mean', text: 'Who is the most clueless when it comes to personal hygiene?' },
-    { type: 'nice', text: 'Who is the most adventurous in the group?' },
-    { type: 'mean', text: 'Who is the most toxic person here?' },
-    { type: 'nice', text: 'Who is the most reliable in a crisis?' },
-    { type: 'mean', text: 'Who is most likely to talk behind your back?' },
-    { type: 'nice', text: 'Who is the most friendly and talks a lot?' },
-    { type: 'mean', text: 'Who is the most hated person in the group?' },
-    { type: 'nice', text: 'Who is the most understanding person in a group?' },
-    // More mean questions
-    { type: 'mean', text: 'Who is the biggest disappointment in this group?' },
-    { type: 'nice', text: 'Who is the best at keeping secrets?' },
-    { type: 'mean', text: 'Who is the most likely to cause a scene in public?' },
-    { type: 'nice', text: 'Who is the most likely to succeed in life?' },
-    { type: 'mean', text: 'Who is the biggest mess-up in the group?' },
-    { type: 'nice', text: 'Who has the best taste in music?' },
-    { type: 'mean', text: 'Who is the most likely to make everyone uncomfortable?' },
-    { type: 'nice', text: 'Who has the best sense of humor?' },
-    { type: 'mean', text: 'Who would you never trust with a secret?' },
-    { type: 'nice', text: 'Who is the most thoughtful person here?' },
-    { type: 'mean', text: 'Who is the most likely to ruin a good time?' },
-    { type: 'nice', text: 'Who is the most supportive friend?' },
-    { type: 'mean', text: 'Who is the most likely to get dumped first?' },
-    { type: 'nice', text: 'Who is most likely to make a difference in the world?' }
-];
 
-        function startGame() {
-            const input = document.getElementById('players').value;
-            players = input
-                .split(',')
-                .map(name => name.trim())
-                .filter(name => name.length > 0);
+    <div id="multiplayer-mode" class="hidden">
+      <h2>Realtime Multiplayer (Beta)</h2>
+      <p id="game-hint">No background server needed. Tap create or join lobby directly.</p>
 
-            if (players.length < 2) {
-                alert('Please enter at least two valid player names!');
-                return;
-            }
+      <div id="multiplayer-entry">
+        <div class="mode-card">
+          <h3>Create Lobby</h3>
+          <input id="host-name" placeholder="Your name" maxlength="20" />
+          <button class="button" id="create-lobby-btn">Create Lobby</button>
+        </div>
+        <div class="mode-card">
+          <h3>Join Lobby</h3>
+          <input id="join-name" placeholder="Your name" maxlength="20" />
+          <input id="join-code" placeholder="Lobby code" maxlength="6" />
+          <button class="button secondary" id="join-lobby-btn">Join Lobby</button>
+        </div>
+      </div>
 
-            // Easter egg check - Show hidden message if 'OMKAR' is in the list
-            if (players.includes('OMKAR')) {
-                showEasterEgg();
-            }
+      <p id="entry-error" class="result"></p>
+      <p id="auto-server-status" class="result"></p>
 
-            document.getElementById('setup').classList.add('hidden');
-            document.getElementById('gameplay').classList.remove('hidden');
-            nextPlayer();
+      <div id="multiplayer-lobby" class="hidden">
+        <span id="code-badge" class="badge"></span>
+        <span id="multi-round-badge" class="badge"></span>
+        <div>
+          <button id="copy-lobby-btn" class="button secondary">Copy Lobby Code</button>
+          <button id="share-lobby-btn" class="button">Share Lobby</button>
+        </div>
+
+        <div class="status">
+          <strong>Turn:</strong> <span id="turn-text">Waiting...</span><br />
+          <strong>Host:</strong> <span id="host-text">-</span>
+        </div>
+
+        <h3>Players</h3>
+        <ul id="players-list" class="players-list"></ul>
+
+        <div>
+          <button id="start-btn" class="button secondary hidden">Start Game</button>
+          <button id="ask-btn" class="button hidden">Give Question</button>
+          <button id="flip-btn" class="button hidden">Flip Coin</button>
+          <button id="next-btn" class="button warning hidden">Next Turn</button>
+        </div>
+
+        <div id="question-text" class="question"></div>
+        <div id="coin-text" class="result"></div>
+        <div id="status-text" class="result"></div>
+      </div>
+
+      <div class="section-actions">
+        <button class="button secondary" onclick="backToMenu()">Back to Main Menu</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    &copy; 2025 Jinx. All rights reserved. | <a href="privacy-policy.html" target="_blank">Privacy Policy</a>
+  </footer>
+
+  <div id="modal">
+    <div id="modal-content">
+      <p id="modal-message"></p>
+      <p id="modal-question" class="hidden"></p>
+      <button id="close-modal" onclick="closeLocalModal()">Close</button>
+    </div>
+  </div>
+
+  <script>
+    // -------- Main menu/navigation --------
+    const mainMenu = document.getElementById('main-menu');
+    const localMode = document.getElementById('local-mode');
+    const multiplayerMode = document.getElementById('multiplayer-mode');
+    const playLocalBtn = document.getElementById('play-local-btn');
+    const playMultiBtn = document.getElementById('play-multi-btn');
+
+    if (playLocalBtn) {
+      playLocalBtn.addEventListener('click', showLocalMode);
+    }
+
+    if (playMultiBtn) {
+      playMultiBtn.addEventListener('click', showMultiplayerMode);
+    }
+
+    document.addEventListener('click', (event) => {
+      const modeButton = event.target.closest('[data-mode]');
+      if (!modeButton) return;
+
+      const mode = modeButton.getAttribute('data-mode');
+      if (mode === 'local') {
+        showLocalMode();
+      } else if (mode === 'multi') {
+        showMultiplayerMode();
+      }
+    });
+
+    function showLocalMode() {
+      mainMenu.classList.add('hidden');
+      multiplayerMode.classList.add('hidden');
+      localMode.classList.remove('hidden');
+    }
+
+    function showMultiplayerMode() {
+      mainMenu.classList.add('hidden');
+      localMode.classList.add('hidden');
+      multiplayerMode.classList.remove('hidden');
+      entryError.textContent = "";
+      autoServerStatus.textContent = "";
+    }
+
+    function backToMenu() {
+      mainMenu.classList.remove('hidden');
+      localMode.classList.add('hidden');
+      multiplayerMode.classList.add('hidden');
+    }
+
+    // -------- Local mode logic --------
+    let players = [];
+    let currentQuestion = '';
+    let roundNumber = 1;
+    let playerQueue = [];
+    let questionQueue = [];
+
+    const questions = [
+      { type: 'spicy', text: 'Who would survive the longest in a zombie apocalypse?' },
+      { type: 'fun', text: 'Who has the best smile?' },
+      { type: 'spicy', text: 'Who is most likely to show up late to their own wedding?' },
+      { type: 'fun', text: 'Who is the funniest person here?' },
+      { type: 'spicy', text: 'Who is most likely to start a dramatic rumor by accident?' },
+      { type: 'fun', text: 'Who is most likely to brighten your day?' },
+      { type: 'spicy', text: 'Who is most likely to forget where they parked?' },
+      { type: 'fun', text: 'Who has the kindest heart?' },
+      { type: 'spicy', text: 'Who is most likely to send a text to the wrong person?' },
+      { type: 'fun', text: 'Who has the most contagious laugh?' },
+      { type: 'spicy', text: 'Who is the biggest drama magnet?' },
+      { type: 'fun', text: 'Who is the best storyteller?' }
+    ];
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
+    function refillPlayerQueue() {
+      playerQueue = shuffleArray([...players]);
+    }
+
+    function refillQuestionQueue() {
+      questionQueue = shuffleArray([...questions]);
+    }
+
+    function startLocalGame() {
+      const input = document.getElementById('players').value;
+      players = input.split(',').map((name) => name.trim()).filter((name) => name.length > 0);
+      players = [...new Set(players)];
+
+      if (players.length < 2) {
+        alert('Please enter at least two valid player names!');
+        return;
+      }
+
+      roundNumber = 1;
+      refillPlayerQueue();
+      refillQuestionQueue();
+      document.getElementById('round-indicator').innerText = `Round ${roundNumber}`;
+
+      if (players.includes('OMKAR')) {
+        document.getElementById('modal-message').innerText = 'Jinx Creator Has Joined The Game';
+        document.getElementById('modal-question').classList.add('hidden');
+        document.getElementById('modal').classList.add('active');
+      }
+
+      document.getElementById('setup').classList.add('hidden');
+      document.getElementById('gameplay').classList.remove('hidden');
+      nextLocalPlayer();
+    }
+
+    function nextLocalPlayer() {
+      if (playerQueue.length === 0) {
+        roundNumber += 1;
+        refillPlayerQueue();
+      }
+
+      const playerName = playerQueue.pop();
+      document.getElementById('current-player').innerText = `${playerName}'s Turn`;
+      document.getElementById('round-indicator').innerText = `Round ${roundNumber}`;
+      document.getElementById('ask-question').classList.remove('hidden');
+      document.getElementById('question-area').classList.add('hidden');
+      document.getElementById('flip-coin').classList.add('hidden');
+    }
+
+    function giveLocalQuestion() {
+      if (questionQueue.length === 0) {
+        refillQuestionQueue();
+      }
+
+      const randomQuestion = questionQueue.pop();
+      currentQuestion = randomQuestion.text;
+      document.getElementById('question').innerText = currentQuestion;
+      document.getElementById('question-area').classList.remove('hidden');
+      document.getElementById('ask-question').classList.add('hidden');
+      document.getElementById('flip-coin').classList.remove('hidden');
+    }
+
+    function flipLocalCoin() {
+      const result = Math.random() < 0.5 ? 'Heads' : 'Tails';
+      document.getElementById('modal-message').innerText = `Coin Result: ${result}`;
+      document.getElementById('modal-question').classList.remove('hidden');
+
+      if (result === 'Heads') {
+        document.getElementById('modal-question').innerText = `Revealed Question: ${currentQuestion}`;
+      } else {
+        document.getElementById('modal-question').innerText = 'Question remains a mystery!';
+      }
+
+      document.getElementById('modal').classList.add('active');
+      document.getElementById('question-area').classList.add('hidden');
+    }
+
+    function closeLocalModal() {
+      document.getElementById('modal').classList.remove('active');
+      if (!document.getElementById('gameplay').classList.contains('hidden')) {
+        nextLocalPlayer();
+      }
+    }
+
+    document.getElementById('players').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        startLocalGame();
+      }
+    });
+
+    // -------- Realtime multiplayer logic (PeerJS, no custom server needed) --------
+    let peer = null;
+    let myId = null;
+    let lobbyState = null;
+    let isHostPlayer = false;
+    let hostConn = null;
+    let lastMultiplayerQuestion = '';
+    const peerConnections = new Map();
+    let multiplayerControlsBound = false;
+
+    const entryError = document.getElementById('entry-error');
+    const autoServerStatus = document.getElementById('auto-server-status');
+    const multiplayerLobby = document.getElementById('multiplayer-lobby');
+    const codeBadge = document.getElementById('code-badge');
+    const multiRoundBadge = document.getElementById('multi-round-badge');
+    const turnText = document.getElementById('turn-text');
+    const hostText = document.getElementById('host-text');
+    const playersList = document.getElementById('players-list');
+    const startBtn = document.getElementById('start-btn');
+    const askBtn = document.getElementById('ask-btn');
+    const flipBtn = document.getElementById('flip-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const questionText = document.getElementById('question-text');
+    const coinText = document.getElementById('coin-text');
+    const statusText = document.getElementById('status-text');
+    const copyLobbyBtn = document.getElementById('copy-lobby-btn');
+    const shareLobbyBtn = document.getElementById('share-lobby-btn');
+
+    function randomLobbyCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 6; i += 1) {
+        code += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return code;
+    }
+
+    function getRandomQuestionText() {
+      let question = questions[Math.floor(Math.random() * questions.length)].text;
+      if (questions.length > 1) {
+        while (question === lastMultiplayerQuestion) {
+          question = questions[Math.floor(Math.random() * questions.length)].text;
+        }
+      }
+      lastMultiplayerQuestion = question;
+      return question;
+    }
+
+    function resetPeerState() {
+      if (hostConn) {
+        try { hostConn.close(); } catch (_) {}
+      }
+      peerConnections.forEach((conn) => {
+        try { conn.close(); } catch (_) {}
+      });
+      peerConnections.clear();
+      hostConn = null;
+      isHostPlayer = false;
+      if (peer) {
+        try { peer.destroy(); } catch (_) {}
+      }
+      peer = null;
+      myId = null;
+      lobbyState = null;
+      multiplayerLobby.classList.add('hidden');
+      autoServerStatus.textContent = '';
+    }
+
+    function broadcastLobbyState() {
+      if (!isHostPlayer || !lobbyState) return;
+      const payload = { type: 'state', state: lobbyState };
+      peerConnections.forEach((conn) => {
+        if (conn.open) {
+          conn.send(payload);
+        }
+      });
+    }
+
+    function removePlayer(playerId) {
+      if (!lobbyState) return;
+      const idx = lobbyState.players.findIndex((p) => p.id === playerId);
+      if (idx === -1) return;
+      lobbyState.players.splice(idx, 1);
+      if (lobbyState.turnIndex >= lobbyState.players.length) {
+        lobbyState.turnIndex = 0;
+      }
+      if (!lobbyState.players.length) {
+        resetPeerState();
+        return;
+      }
+      renderMultiplayer();
+      broadcastLobbyState();
+    }
+
+    function applyActionFromPlayer(playerId, action) {
+      if (!isHostPlayer || !lobbyState) return;
+      const turnPlayer = lobbyState.players[lobbyState.turnIndex];
+      const isHost = playerId === lobbyState.hostId;
+      const isTurn = turnPlayer && turnPlayer.id === playerId;
+
+      if (action === 'start_game') {
+        if (!isHost || lobbyState.players.length < 2) return;
+        lobbyState.started = true;
+        lobbyState.turnIndex = 0;
+        lobbyState.round = 1;
+        lobbyState.questionAsked = false;
+        lobbyState.currentQuestion = '';
+        lobbyState.coinResult = '';
+        lobbyState.questionVisible = false;
+      }
+
+      if (action === 'ask_question') {
+        if (!lobbyState.started || !isTurn || lobbyState.questionAsked) return;
+        lobbyState.currentQuestion = getRandomQuestionText();
+        lobbyState.questionAsked = true;
+        lobbyState.coinResult = '';
+        lobbyState.questionVisible = false;
+      }
+
+      if (action === 'flip_coin') {
+        if (!lobbyState.started || !isTurn || !lobbyState.questionAsked || lobbyState.coinResult) return;
+        lobbyState.coinResult = Math.random() < 0.5 ? 'Heads' : 'Tails';
+        lobbyState.questionVisible = lobbyState.coinResult === 'Heads';
+      }
+
+      if (action === 'next_turn') {
+        if (!lobbyState.started || !lobbyState.coinResult || !(isTurn || isHost)) return;
+        lobbyState.turnIndex = (lobbyState.turnIndex + 1) % lobbyState.players.length;
+        if (lobbyState.turnIndex === 0) {
+          lobbyState.round += 1;
+        }
+        lobbyState.questionAsked = false;
+        lobbyState.currentQuestion = '';
+        lobbyState.coinResult = '';
+        lobbyState.questionVisible = false;
+      }
+
+      renderMultiplayer();
+      broadcastLobbyState();
+    }
+
+    function setupHostConnection(conn) {
+      conn.on('open', () => {
+        peerConnections.set(conn.peer, conn);
+      });
+
+      conn.on('data', (msg) => {
+        if (!msg || typeof msg !== 'object') return;
+        if (msg.type === 'join_request') {
+          const cleanName = String(msg.name || '').trim().slice(0, 20);
+          if (!cleanName) {
+            conn.send({ type: 'error', error: 'Invalid player name.' });
+            return;
+          }
+          if (lobbyState.players.some((p) => p.name.toLowerCase() === cleanName.toLowerCase())) {
+            conn.send({ type: 'error', error: 'Name already exists in lobby.' });
+            return;
+          }
+          lobbyState.players.push({ id: conn.peer, name: cleanName });
+          renderMultiplayer();
+          broadcastLobbyState();
+          return;
         }
 
-        function showEasterEgg() {
-            // Show the hidden message when 'OMKAR' joins
-            const modalMessage = 'Jinx Creator Has Joined The Game';
-            document.getElementById('modal-message').innerText = modalMessage;
-            document.getElementById('modal').classList.add('active');
+        if (msg.type === 'action') {
+          applyActionFromPlayer(conn.peer, msg.action);
         }
+      });
 
-        let lastPlayerIndex = -1; // Keeps track of the last selected player index
+      conn.on('close', () => {
+        peerConnections.delete(conn.peer);
+        removePlayer(conn.peer);
+      });
+    }
 
-        function nextPlayer() {
-            // Choose a random player but ensure it's not the same as the last player
-            let newPlayerIndex;
-            do {
-                newPlayerIndex = Math.floor(Math.random() * players.length);
-            } while (newPlayerIndex === lastPlayerIndex);
+    function createHostLobby(name) {
+      resetPeerState();
+      const cleanName = String(name || '').trim().slice(0, 20);
+      if (!cleanName) {
+        entryError.textContent = 'Enter your name first.';
+        return;
+      }
 
-            // Update the last selected player index
-            lastPlayerIndex = newPlayerIndex;
+      const lobbyCode = randomLobbyCode();
+      autoServerStatus.textContent = 'Creating lobby...';
+      peer = new Peer(lobbyCode);
 
-            const playerName = players[newPlayerIndex];
-            document.getElementById('current-player').innerText = `${playerName}'s Turn`;
-            document.getElementById('ask-question').classList.remove('hidden');
-            document.getElementById('question-area').classList.add('hidden');
-            document.getElementById('flip-coin').classList.add('hidden');
-        }
+      peer.on('open', (id) => {
+        isHostPlayer = true;
+        myId = id;
+        lobbyState = {
+          code: lobbyCode,
+          hostId: id,
+          players: [{ id, name: cleanName }],
+          started: false,
+          turnIndex: 0,
+          round: 1,
+          questionAsked: false,
+          currentQuestion: '',
+          coinResult: '',
+          questionVisible: false
+        };
+        entryError.textContent = '';
+        autoServerStatus.textContent = 'Lobby created. Share code with friends.';
+        renderMultiplayer();
+      });
 
-        function giveQuestion() {
-            let questionIndex;
+      peer.on('connection', setupHostConnection);
+      peer.on('error', (err) => {
+        entryError.textContent = err?.type === 'unavailable-id'
+          ? 'Try again: lobby code collision happened.'
+          : 'Could not create lobby. Check internet and retry.';
+      });
+    }
 
-            if (questions.length === 1) {
-                questionIndex = 0;
-            } else {
-                do {
-                    questionIndex = Math.floor(Math.random() * questions.length);
-                } while (questionIndex === lastQuestionIndex);
-            }
+    function joinHostLobby(name, code) {
+      resetPeerState();
+      const cleanName = String(name || '').trim().slice(0, 20);
+      const lobbyCode = String(code || '').trim().toUpperCase();
+      if (!cleanName || !lobbyCode) {
+        entryError.textContent = 'Enter name and lobby code.';
+        return;
+      }
 
-            lastQuestionIndex = questionIndex;
-            const randomQuestion = questions[questionIndex];
-            currentQuestion = randomQuestion.text;
-            document.getElementById('question').innerText = currentQuestion;
-            document.getElementById('question-area').classList.remove('hidden');
-            document.getElementById('ask-question').classList.add('hidden');
-            document.getElementById('flip-coin').classList.remove('hidden');
-        }
+      autoServerStatus.textContent = 'Joining lobby...';
+      peer = new Peer();
 
-        function flipCoin() {
-            const result = Math.random() < 0.5 ? 'Heads' : 'Tails';
-            const modalMessage = `Coin Result: ${result}`;
-            document.getElementById('modal-message').innerText = modalMessage;
+      peer.on('open', (id) => {
+        myId = id;
+        hostConn = peer.connect(lobbyCode, { reliable: true });
 
-            if (result === 'Heads') {
-                document.getElementById('modal-question').innerText = `Question remains a mystery!`;
-                document.getElementById('modal-question').classList.remove('hidden');
-            } else {
-                document.getElementById('modal-question').innerText = `Revealed Question: ${currentQuestion}`;
-                document.getElementById('modal-question').classList.remove('hidden');
-            }
-
-            document.getElementById('modal').classList.add('active');
-            document.getElementById('question-area').classList.add('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('modal').classList.remove('active');
-            nextPlayer();
-        }
-
-        document.getElementById('players').addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                startGame();
-            }
+        hostConn.on('open', () => {
+          hostConn.send({ type: 'join_request', name: cleanName });
+          entryError.textContent = '';
+          autoServerStatus.textContent = `Connected to lobby ${lobbyCode}`;
         });
-    </script>
+
+        hostConn.on('data', (msg) => {
+          if (!msg || typeof msg !== 'object') return;
+          if (msg.type === 'state') {
+            lobbyState = msg.state;
+            renderMultiplayer();
+          }
+          if (msg.type === 'error') {
+            entryError.textContent = msg.error || 'Could not join lobby.';
+          }
+        });
+
+        hostConn.on('close', () => {
+          entryError.textContent = 'Disconnected from host lobby.';
+        });
+      });
+
+      peer.on('error', () => {
+        entryError.textContent = 'Could not join lobby. Check code/internet and retry.';
+      });
+    }
+
+    function sendAction(action) {
+      if (isHostPlayer) {
+        applyActionFromPlayer(myId, action);
+        return;
+      }
+      if (hostConn && hostConn.open) {
+        hostConn.send({ type: 'action', action });
+      }
+    }
+
+    function copyLobbyCode() {
+      if (!lobbyState?.code) return;
+      navigator.clipboard.writeText(lobbyState.code)
+        .then(() => { autoServerStatus.textContent = 'Lobby code copied.'; })
+        .catch(() => { autoServerStatus.textContent = `Lobby code: ${lobbyState.code}`; });
+    }
+
+    function shareLobby() {
+      if (!lobbyState?.code) return;
+      const text = `Join my Jinx lobby! Code: ${lobbyState.code}`;
+      const shareUrl = `${window.location.origin}${window.location.pathname}`;
+      if (navigator.share) {
+        navigator.share({ title: 'Jinx Lobby', text, url: shareUrl }).catch(() => {});
+        return;
+      }
+      const waText = encodeURIComponent(`${text}
+${shareUrl}`);
+      window.open(`https://wa.me/?text=${waText}`, '_blank');
+    }
+
+    if (!multiplayerControlsBound) {
+      multiplayerControlsBound = true;
+      startBtn.addEventListener('click', () => sendAction('start_game'));
+      askBtn.addEventListener('click', () => sendAction('ask_question'));
+      flipBtn.addEventListener('click', () => sendAction('flip_coin'));
+      nextBtn.addEventListener('click', () => sendAction('next_turn'));
+      copyLobbyBtn.addEventListener('click', copyLobbyCode);
+      shareLobbyBtn.addEventListener('click', shareLobby);
+
+      document.getElementById('create-lobby-btn').addEventListener('click', () => {
+        const name = document.getElementById('host-name').value.trim();
+        createHostLobby(name);
+      });
+
+      document.getElementById('join-lobby-btn').addEventListener('click', () => {
+        const name = document.getElementById('join-name').value.trim();
+        const code = document.getElementById('join-code').value.trim().toUpperCase();
+        joinHostLobby(name, code);
+      });
+    }
+
+    function playerById(id) {
+      return (lobbyState?.players || []).find((p) => p.id === id);
+    }
+
+    function currentTurnPlayer() {
+      if (!lobbyState || !Array.isArray(lobbyState.players)) return null;
+      return lobbyState.players[lobbyState.turnIndex] || null;
+    }
+
+    function isMyTurn() {
+      return currentTurnPlayer()?.id === myId;
+    }
+
+    function isHost() {
+      return lobbyState?.hostId === myId;
+    }
+
+    function renderMultiplayer() {
+      if (!lobbyState) return;
+
+      multiplayerLobby.classList.remove('hidden');
+      codeBadge.textContent = `Lobby: ${lobbyState.code}`;
+      multiRoundBadge.textContent = `Round ${lobbyState.round}`;
+
+      const host = playerById(lobbyState.hostId);
+      hostText.textContent = host ? host.name : 'Unknown';
+
+      playersList.innerHTML = '';
+      lobbyState.players.forEach((p, index) => {
+        const li = document.createElement('li');
+        const tags = [];
+        if (p.id === lobbyState.hostId) tags.push('Host');
+        if (lobbyState.started && lobbyState.turnIndex === index) tags.push('Turn');
+        if (p.id === myId) tags.push('You');
+        li.textContent = `${p.name}${tags.length ? ` (${tags.join(', ')})` : ''}`;
+        playersList.appendChild(li);
+      });
+
+      if (!lobbyState.started) {
+        turnText.textContent = 'Waiting for host to start the game';
+        statusText.textContent = 'Lobby ready. Invite friends using the code above.';
+      } else {
+        turnText.textContent = `${currentTurnPlayer()?.name || 'Unknown'} is playing`;
+        statusText.textContent = isMyTurn() ? 'Your move.' : 'Wait for the active player.';
+      }
+
+      startBtn.classList.toggle('hidden', !(isHost() && !lobbyState.started && lobbyState.players.length >= 2));
+      askBtn.classList.toggle('hidden', !(lobbyState.started && isMyTurn() && !lobbyState.questionAsked));
+      flipBtn.classList.toggle('hidden', !(lobbyState.started && isMyTurn() && lobbyState.questionAsked && !lobbyState.coinResult));
+      nextBtn.classList.toggle('hidden', !(lobbyState.started && lobbyState.coinResult && (isMyTurn() || isHost())));
+
+      if (!lobbyState.started) {
+        questionText.textContent = '';
+        coinText.textContent = '';
+        return;
+      }
+
+      if (lobbyState.questionAsked) {
+        questionText.textContent = lobbyState.questionVisible
+          ? `Question: ${lobbyState.currentQuestion}`
+          : 'Question selected. Toss decides if it is revealed.';
+      } else {
+        questionText.textContent = '';
+      }
+
+      if (lobbyState.coinResult) {
+        coinText.textContent = lobbyState.coinResult === 'Heads'
+          ? 'Coin: Heads — Question is revealed.'
+          : 'Coin: Tails — Question stays a mystery.';
+      } else {
+        coinText.textContent = '';
+      }
+    }
+  </script>
 </body>
 </html>
