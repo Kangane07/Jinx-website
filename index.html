@@ -88,6 +88,22 @@
             display: none;
         }
 
+        #game-hint {
+            font-size: 14px;
+            color: #555;
+            margin-top: 0;
+        }
+
+        #round-indicator {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(108, 99, 255, 0.12);
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 14px;
+        }
+
         #question-area {
             font-size: 18px;
             font-weight: bold;
@@ -210,10 +226,12 @@
         <div id="setup">
             <label for="players">Enter player names (comma-separated):</label><br>
             <input type="text" id="players" placeholder="e.g., Om, Sandip, Akshay"><br>
+            <p id="game-hint">Tip: Add at least 3 players for maximum suspense.</p>
             <button class="button" onclick="startGame()">Start Game</button>
         </div>
 
         <div id="gameplay" class="hidden">
+            <div id="round-indicator">Round 1</div>
             <h2 id="current-player"></h2>
             <p id="question-area" class="hidden">
                 Question: <span id="question"></span>
@@ -238,48 +256,65 @@
     <script>
         let players = [];
         let currentQuestion = "";
-        let lastQuestionIndex = -1;
+        let roundNumber = 1;
+        let playerQueue = [];
+        let questionQueue = [];
         const questions = [
-    { type: 'mean', text: 'Who is the ugliest person here?' },
-    { type: 'nice', text: 'Who has the best smile?' },
-    { type: 'mean', text: 'Who has the worst fashion sense in this room?' },
-    { type: 'nice', text: 'Who is the funniest person here?' },
-    { type: 'mean', text: 'Who is the most annoying person in this group?' },
-    { type: 'nice', text: 'Who is most likely to brighten your day?' },
-    { type: 'mean', text: 'Who is the most likely to ruin a group photo?' },
-    { type: 'nice', text: 'Who has the kindest heart?' },
-    { type: 'mean', text: 'Who is the most likely to embarrass themselves in public?' },
-    { type: 'nice', text: 'Who has the most contagious laugh?' },
-    { type: 'mean', text: 'Who is the biggest drama queen in the group?' },
-    { type: 'nice', text: 'Who is the best storyteller?' },
-    { type: 'mean', text: 'Who would you least want to be stuck in an elevator with?' },
-    { type: 'nice', text: 'Who is the most creative person here?' },
-    { type: 'mean', text: 'Who is the biggest try-hard in the group?' },
-    { type: 'nice', text: 'Who gives the best advice?' },
-    { type: 'mean', text: 'Who is the most clueless when it comes to personal hygiene?' },
-    { type: 'nice', text: 'Who is the most adventurous in the group?' },
-    { type: 'mean', text: 'Who is the most toxic person here?' },
-    { type: 'nice', text: 'Who is the most reliable in a crisis?' },
-    { type: 'mean', text: 'Who is most likely to talk behind your back?' },
-    { type: 'nice', text: 'Who is the most friendly and talks a lot?' },
-    { type: 'mean', text: 'Who is the most hated person in the group?' },
-    { type: 'nice', text: 'Who is the most understanding person in a group?' },
-    // More mean questions
-    { type: 'mean', text: 'Who is the biggest disappointment in this group?' },
-    { type: 'nice', text: 'Who is the best at keeping secrets?' },
-    { type: 'mean', text: 'Who is the most likely to cause a scene in public?' },
-    { type: 'nice', text: 'Who is the most likely to succeed in life?' },
-    { type: 'mean', text: 'Who is the biggest mess-up in the group?' },
-    { type: 'nice', text: 'Who has the best taste in music?' },
-    { type: 'mean', text: 'Who is the most likely to make everyone uncomfortable?' },
-    { type: 'nice', text: 'Who has the best sense of humor?' },
-    { type: 'mean', text: 'Who would you never trust with a secret?' },
-    { type: 'nice', text: 'Who is the most thoughtful person here?' },
-    { type: 'mean', text: 'Who is the most likely to ruin a good time?' },
-    { type: 'nice', text: 'Who is the most supportive friend?' },
-    { type: 'mean', text: 'Who is the most likely to get dumped first?' },
-    { type: 'nice', text: 'Who is most likely to make a difference in the world?' }
+    { type: 'spicy', text: 'Who would survive the longest in a zombie apocalypse?' },
+    { type: 'fun', text: 'Who has the best smile?' },
+    { type: 'spicy', text: 'Who is most likely to show up late to their own wedding?' },
+    { type: 'fun', text: 'Who is the funniest person here?' },
+    { type: 'spicy', text: 'Who is most likely to start a dramatic rumor by accident?' },
+    { type: 'fun', text: 'Who is most likely to brighten your day?' },
+    { type: 'spicy', text: 'Who is most likely to forget where they parked?' },
+    { type: 'fun', text: 'Who has the kindest heart?' },
+    { type: 'spicy', text: 'Who is most likely to send a text to the wrong person?' },
+    { type: 'fun', text: 'Who has the most contagious laugh?' },
+    { type: 'spicy', text: 'Who is the biggest drama magnet?' },
+    { type: 'fun', text: 'Who is the best storyteller?' },
+    { type: 'spicy', text: 'Who would panic first in an escape room?' },
+    { type: 'fun', text: 'Who is the most creative person here?' },
+    { type: 'spicy', text: 'Who spends the longest getting ready?' },
+    { type: 'fun', text: 'Who gives the best advice?' },
+    { type: 'spicy', text: 'Who is most likely to laugh at the wrong moment?' },
+    { type: 'fun', text: 'Who is the most adventurous in the group?' },
+    { type: 'spicy', text: 'Who is most likely to go viral for something random?' },
+    { type: 'fun', text: 'Who is the most reliable in a crisis?' },
+    { type: 'spicy', text: 'Who is most likely to start dancing in public?' },
+    { type: 'fun', text: 'Who is the friendliest talker?' },
+    { type: 'spicy', text: 'Who is most likely to break into a movie quote mid-conversation?' },
+    { type: 'fun', text: 'Who is the most understanding person in this group?' },
+    { type: 'spicy', text: 'Who is most likely to forget a birthday and make up for it with snacks?' },
+    { type: 'fun', text: 'Who is the best at keeping secrets?' },
+    { type: 'spicy', text: 'Who is most likely to cause a scene while telling a story?' },
+    { type: 'fun', text: 'Who is most likely to succeed in life?' },
+    { type: 'spicy', text: 'Who is most likely to lose a challenge and still celebrate?' },
+    { type: 'fun', text: 'Who has the best taste in music?' },
+    { type: 'spicy', text: 'Who is most likely to make everyone laugh during a serious moment?' },
+    { type: 'fun', text: 'Who has the best sense of humor?' },
+    { type: 'spicy', text: 'Who is most likely to overshare by accident?' },
+    { type: 'fun', text: 'Who is the most thoughtful person here?' },
+    { type: 'spicy', text: 'Who is most likely to turn a small issue into a full adventure?' },
+    { type: 'fun', text: 'Who is the most supportive friend?' },
+    { type: 'spicy', text: 'Who is most likely to say “one last round” and mean five more?' },
+    { type: 'fun', text: 'Who is most likely to make a difference in the world?' }
 ];
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function refillPlayerQueue() {
+            playerQueue = shuffleArray([...players]);
+        }
+
+        function refillQuestionQueue() {
+            questionQueue = shuffleArray([...questions]);
+        }
 
         function startGame() {
             const input = document.getElementById('players').value;
@@ -288,10 +323,17 @@
                 .map(name => name.trim())
                 .filter(name => name.length > 0);
 
+            players = [...new Set(players)];
+
             if (players.length < 2) {
                 alert('Please enter at least two valid player names!');
                 return;
             }
+
+            roundNumber = 1;
+            refillPlayerQueue();
+            refillQuestionQueue();
+            document.getElementById('round-indicator').innerText = `Round ${roundNumber}`;
 
             // Easter egg check - Show hidden message if 'OMKAR' is in the list
             if (players.includes('OMKAR')) {
@@ -310,38 +352,26 @@
             document.getElementById('modal').classList.add('active');
         }
 
-        let lastPlayerIndex = -1; // Keeps track of the last selected player index
-
         function nextPlayer() {
-            // Choose a random player but ensure it's not the same as the last player
-            let newPlayerIndex;
-            do {
-                newPlayerIndex = Math.floor(Math.random() * players.length);
-            } while (newPlayerIndex === lastPlayerIndex);
+            if (playerQueue.length === 0) {
+                roundNumber += 1;
+                refillPlayerQueue();
+            }
 
-            // Update the last selected player index
-            lastPlayerIndex = newPlayerIndex;
-
-            const playerName = players[newPlayerIndex];
+            const playerName = playerQueue.pop();
             document.getElementById('current-player').innerText = `${playerName}'s Turn`;
+            document.getElementById('round-indicator').innerText = `Round ${roundNumber}`;
             document.getElementById('ask-question').classList.remove('hidden');
             document.getElementById('question-area').classList.add('hidden');
             document.getElementById('flip-coin').classList.add('hidden');
         }
 
         function giveQuestion() {
-            let questionIndex;
-
-            if (questions.length === 1) {
-                questionIndex = 0;
-            } else {
-                do {
-                    questionIndex = Math.floor(Math.random() * questions.length);
-                } while (questionIndex === lastQuestionIndex);
+            if (questionQueue.length === 0) {
+                refillQuestionQueue();
             }
 
-            lastQuestionIndex = questionIndex;
-            const randomQuestion = questions[questionIndex];
+            const randomQuestion = questionQueue.pop();
             currentQuestion = randomQuestion.text;
             document.getElementById('question').innerText = currentQuestion;
             document.getElementById('question-area').classList.remove('hidden');
@@ -355,10 +385,10 @@
             document.getElementById('modal-message').innerText = modalMessage;
 
             if (result === 'Heads') {
-                document.getElementById('modal-question').innerText = `Question remains a mystery!`;
+                document.getElementById('modal-question').innerText = `Revealed Question: ${currentQuestion}`;
                 document.getElementById('modal-question').classList.remove('hidden');
             } else {
-                document.getElementById('modal-question').innerText = `Revealed Question: ${currentQuestion}`;
+                document.getElementById('modal-question').innerText = `Question remains a mystery!`;
                 document.getElementById('modal-question').classList.remove('hidden');
             }
 
