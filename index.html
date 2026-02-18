@@ -94,6 +94,16 @@
             margin-top: 0;
         }
 
+
+        .game-beta-link {
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        .game-beta-link a {
+            color: var(--primary-color);
+            font-weight: 600;
+        }
         #round-indicator {
             display: inline-block;
             padding: 6px 12px;
@@ -228,6 +238,7 @@
             <input type="text" id="players" placeholder="e.g., Om, Sandip, Akshay"><br>
             <p id="game-hint">Tip: Add at least 3 players for maximum suspense.</p>
             <button class="button" onclick="startGame()">Start Game</button>
+            <p class="game-beta-link">Want cross-device play? <a href="multiplayer.html">Try Realtime Multiplayer (Beta)</a></p>
         </div>
 
         <div id="gameplay" class="hidden">

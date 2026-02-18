@@ -71,3 +71,25 @@ Instagram — **@om_kangane07**
 ## 📄 License
 
 This project is licensed under the **MIT License**.
+
+
+---
+
+## 🌐 Realtime Multiplayer (Beta)
+
+Jinx now includes an experimental **realtime multiplayer mode** for cross-device play:
+
+- One player creates a lobby and shares a 6-character code
+- Friends join from their own devices using the code
+- Turns, questions, and coin results stay synced for everyone
+
+### Run it locally
+
+```bash
+npm install
+npm start
+```
+
+Then open:
+- `http://localhost:3000/index.html` (local single-device mode)
+- `http://localhost:3000/multiplayer.html` (realtime mode)
