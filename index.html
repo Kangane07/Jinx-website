@@ -11,6 +11,7 @@
     gtag('js', new Date());
     gtag('config', 'G-QTBX2M9ZK4');
   </script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     :root {
       --primary-color: #6c63ff;
@@ -305,13 +306,7 @@
 
     <div id="multiplayer-mode" class="hidden">
       <h2>Realtime Multiplayer (Beta)</h2>
-      <p id="game-hint">Just tap Multiplayer and we auto-connect to available realtime server. If needed, use advanced server URL override.</p>
-
-      <div class="mode-card" style="text-align:left; margin-bottom:12px;">
-        <label for="server-url"><strong>Advanced: Custom Realtime Server URL</strong></label>
-        <input id="server-url" placeholder="https://your-jinx-server.onrender.com" />
-        <p style="margin:0;color:#555;font-size:13px;">Leave empty for automatic server selection.</p>
-      </div>
+      <p id="game-hint">No background server needed. Tap create or join lobby directly.</p>
 
       <div id="multiplayer-entry">
         <div class="mode-card">
@@ -333,6 +328,10 @@
       <div id="multiplayer-lobby" class="hidden">
         <span id="code-badge" class="badge"></span>
         <span id="multi-round-badge" class="badge"></span>
+        <div>
+          <button id="copy-lobby-btn" class="button secondary">Copy Lobby Code</button>
+          <button id="share-lobby-btn" class="button">Share Lobby</button>
+        </div>
 
         <div class="status">
           <strong>Turn:</strong> <span id="turn-text">Waiting...</span><br />
@@ -411,7 +410,7 @@
       localMode.classList.add('hidden');
       multiplayerMode.classList.remove('hidden');
       entryError.textContent = "";
-      ensureSocketLoaded();
+      autoServerStatus.textContent = "";
     }
 
     function backToMenu() {
@@ -540,18 +539,15 @@
       }
     });
 
-    // -------- Realtime multiplayer logic --------
-    let socketReady = false;
-    let socket = null;
+    // -------- Realtime multiplayer logic (PeerJS, no custom server needed) --------
+    let peer = null;
     let myId = null;
     let lobbyState = null;
-    let socketServerUrl = '';
-    let socketScriptInjectedUrl = '';
+    let isHostPlayer = false;
+    let hostConn = null;
+    let lastMultiplayerQuestion = '';
+    const peerConnections = new Map();
     let multiplayerControlsBound = false;
-    const AUTO_SERVER_CANDIDATES = [
-      window.location.origin,
-      'https://jinx-realtime.onrender.com'
-    ];
 
     const entryError = document.getElementById('entry-error');
     const autoServerStatus = document.getElementById('auto-server-status');
@@ -568,150 +564,301 @@
     const questionText = document.getElementById('question-text');
     const coinText = document.getElementById('coin-text');
     const statusText = document.getElementById('status-text');
+    const copyLobbyBtn = document.getElementById('copy-lobby-btn');
+    const shareLobbyBtn = document.getElementById('share-lobby-btn');
 
-    function normalizedCustomServerUrl() {
-      const input = document.getElementById('server-url').value.trim();
-      if (!input) {
-        return '';
+    function randomLobbyCode() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let code = '';
+      for (let i = 0; i < 6; i += 1) {
+        code += chars[Math.floor(Math.random() * chars.length)];
       }
-      return input.replace(/\/$/, '');
+      return code;
     }
 
-    function candidateServerUrls() {
-      const custom = normalizedCustomServerUrl();
-      if (custom) {
-        return [custom];
+    function getRandomQuestionText() {
+      let question = questions[Math.floor(Math.random() * questions.length)].text;
+      if (questions.length > 1) {
+        while (question === lastMultiplayerQuestion) {
+          question = questions[Math.floor(Math.random() * questions.length)].text;
+        }
       }
-      return AUTO_SERVER_CANDIDATES;
+      lastMultiplayerQuestion = question;
+      return question;
     }
 
-    function loadSocketScriptFrom(targetUrl, onSuccess, onError) {
-      if (socketScriptInjectedUrl === targetUrl && window.io) {
-        onSuccess();
+    function resetPeerState() {
+      if (hostConn) {
+        try { hostConn.close(); } catch (_) {}
+      }
+      peerConnections.forEach((conn) => {
+        try { conn.close(); } catch (_) {}
+      });
+      peerConnections.clear();
+      hostConn = null;
+      isHostPlayer = false;
+      if (peer) {
+        try { peer.destroy(); } catch (_) {}
+      }
+      peer = null;
+      myId = null;
+      lobbyState = null;
+      multiplayerLobby.classList.add('hidden');
+      autoServerStatus.textContent = '';
+    }
+
+    function broadcastLobbyState() {
+      if (!isHostPlayer || !lobbyState) return;
+      const payload = { type: 'state', state: lobbyState };
+      peerConnections.forEach((conn) => {
+        if (conn.open) {
+          conn.send(payload);
+        }
+      });
+    }
+
+    function removePlayer(playerId) {
+      if (!lobbyState) return;
+      const idx = lobbyState.players.findIndex((p) => p.id === playerId);
+      if (idx === -1) return;
+      lobbyState.players.splice(idx, 1);
+      if (lobbyState.turnIndex >= lobbyState.players.length) {
+        lobbyState.turnIndex = 0;
+      }
+      if (!lobbyState.players.length) {
+        resetPeerState();
+        return;
+      }
+      renderMultiplayer();
+      broadcastLobbyState();
+    }
+
+    function applyActionFromPlayer(playerId, action) {
+      if (!isHostPlayer || !lobbyState) return;
+      const turnPlayer = lobbyState.players[lobbyState.turnIndex];
+      const isHost = playerId === lobbyState.hostId;
+      const isTurn = turnPlayer && turnPlayer.id === playerId;
+
+      if (action === 'start_game') {
+        if (!isHost || lobbyState.players.length < 2) return;
+        lobbyState.started = true;
+        lobbyState.turnIndex = 0;
+        lobbyState.round = 1;
+        lobbyState.questionAsked = false;
+        lobbyState.currentQuestion = '';
+        lobbyState.coinResult = '';
+        lobbyState.questionVisible = false;
+      }
+
+      if (action === 'ask_question') {
+        if (!lobbyState.started || !isTurn || lobbyState.questionAsked) return;
+        lobbyState.currentQuestion = getRandomQuestionText();
+        lobbyState.questionAsked = true;
+        lobbyState.coinResult = '';
+        lobbyState.questionVisible = false;
+      }
+
+      if (action === 'flip_coin') {
+        if (!lobbyState.started || !isTurn || !lobbyState.questionAsked || lobbyState.coinResult) return;
+        lobbyState.coinResult = Math.random() < 0.5 ? 'Heads' : 'Tails';
+        lobbyState.questionVisible = lobbyState.coinResult === 'Heads';
+      }
+
+      if (action === 'next_turn') {
+        if (!lobbyState.started || !lobbyState.coinResult || !(isTurn || isHost)) return;
+        lobbyState.turnIndex = (lobbyState.turnIndex + 1) % lobbyState.players.length;
+        if (lobbyState.turnIndex === 0) {
+          lobbyState.round += 1;
+        }
+        lobbyState.questionAsked = false;
+        lobbyState.currentQuestion = '';
+        lobbyState.coinResult = '';
+        lobbyState.questionVisible = false;
+      }
+
+      renderMultiplayer();
+      broadcastLobbyState();
+    }
+
+    function setupHostConnection(conn) {
+      conn.on('open', () => {
+        peerConnections.set(conn.peer, conn);
+      });
+
+      conn.on('data', (msg) => {
+        if (!msg || typeof msg !== 'object') return;
+        if (msg.type === 'join_request') {
+          const cleanName = String(msg.name || '').trim().slice(0, 20);
+          if (!cleanName) {
+            conn.send({ type: 'error', error: 'Invalid player name.' });
+            return;
+          }
+          if (lobbyState.players.some((p) => p.name.toLowerCase() === cleanName.toLowerCase())) {
+            conn.send({ type: 'error', error: 'Name already exists in lobby.' });
+            return;
+          }
+          lobbyState.players.push({ id: conn.peer, name: cleanName });
+          renderMultiplayer();
+          broadcastLobbyState();
+          return;
+        }
+
+        if (msg.type === 'action') {
+          applyActionFromPlayer(conn.peer, msg.action);
+        }
+      });
+
+      conn.on('close', () => {
+        peerConnections.delete(conn.peer);
+        removePlayer(conn.peer);
+      });
+    }
+
+    function createHostLobby(name) {
+      resetPeerState();
+      const cleanName = String(name || '').trim().slice(0, 20);
+      if (!cleanName) {
+        entryError.textContent = 'Enter your name first.';
         return;
       }
 
-      const script = document.createElement('script');
-      script.src = `${targetUrl}/socket.io/socket.io.js`;
-      script.onload = () => {
-        socketScriptInjectedUrl = targetUrl;
-        onSuccess();
-      };
-      script.onerror = onError;
-      document.head.appendChild(script);
-    }
+      const lobbyCode = randomLobbyCode();
+      autoServerStatus.textContent = 'Creating lobby...';
+      peer = new Peer(lobbyCode);
 
-    function ensureSocketLoaded() {
-      const candidates = candidateServerUrls();
-      let currentIndex = 0;
-
-      const tryNext = () => {
-        if (currentIndex >= candidates.length) {
-          entryError.textContent = 'No realtime server is reachable right now. You can still play Local Mode instantly.';
-          autoServerStatus.textContent = '';
-          return;
-        }
-
-        const targetUrl = candidates[currentIndex];
-        currentIndex += 1;
-
-        autoServerStatus.textContent = `Connecting multiplayer to: ${targetUrl}`;
-
-        if (socketReady && socketServerUrl === targetUrl && socket) {
-          autoServerStatus.textContent = `Connected to: ${targetUrl}`;
-          return;
-        }
-
-        if (socket && socketServerUrl !== targetUrl) {
-          socket.disconnect();
-          socket = null;
-          socketReady = false;
-        }
-
-        loadSocketScriptFrom(
-          targetUrl,
-          () => {
-            socketReady = true;
-            setupSocket(targetUrl);
-          },
-          () => {
-            tryNext();
-          }
-        );
-      };
-
-      tryNext();
-    }
-
-    function setupSocket(serverUrl) {
-      if (socket) {
-        socket.disconnect();
-      }
-
-      socketServerUrl = serverUrl;
-      socket = io(serverUrl, { transports: ['websocket', 'polling'] });
-
-      socket.on('connect', () => {
-        myId = socket.id;
+      peer.on('open', (id) => {
+        isHostPlayer = true;
+        myId = id;
+        lobbyState = {
+          code: lobbyCode,
+          hostId: id,
+          players: [{ id, name: cleanName }],
+          started: false,
+          turnIndex: 0,
+          round: 1,
+          questionAsked: false,
+          currentQuestion: '',
+          coinResult: '',
+          questionVisible: false
+        };
         entryError.textContent = '';
-        autoServerStatus.textContent = `Connected to: ${socketServerUrl}`;
-      });
-
-      socket.on('connect_error', () => {
-        entryError.textContent = 'Realtime connection failed. We will try fallback server if available.';
-        autoServerStatus.textContent = '';
-      });
-
-      socket.on('lobby_state', (state) => {
-        lobbyState = state;
+        autoServerStatus.textContent = 'Lobby created. Share code with friends.';
         renderMultiplayer();
       });
 
-      if (!multiplayerControlsBound) {
-        multiplayerControlsBound = true;
+      peer.on('connection', setupHostConnection);
+      peer.on('error', (err) => {
+        entryError.textContent = err?.type === 'unavailable-id'
+          ? 'Try again: lobby code collision happened.'
+          : 'Could not create lobby. Check internet and retry.';
+      });
+    }
 
-        startBtn.addEventListener('click', () => socket.emit('start_game'));
-        askBtn.addEventListener('click', () => socket.emit('ask_question'));
-        flipBtn.addEventListener('click', () => socket.emit('flip_coin'));
-        nextBtn.addEventListener('click', () => socket.emit('next_turn'));
-
-        document.getElementById('create-lobby-btn').addEventListener('click', () => {
-          const name = document.getElementById('host-name').value.trim();
-          socket.emit('create_lobby', { name }, (response) => {
-            if (!response.ok) {
-              entryError.textContent = response.error;
-              return;
-            }
-            entryError.textContent = '';
-            autoServerStatus.textContent = `Connected to: ${socketServerUrl}`;
-            lobbyState = response.state;
-            renderMultiplayer();
-          });
-        });
-
-        document.getElementById('join-lobby-btn').addEventListener('click', () => {
-          const name = document.getElementById('join-name').value.trim();
-          const code = document.getElementById('join-code').value.trim().toUpperCase();
-          socket.emit('join_lobby', { name, code }, (response) => {
-            if (!response.ok) {
-              entryError.textContent = response.error;
-              return;
-            }
-            entryError.textContent = '';
-            autoServerStatus.textContent = `Connected to: ${socketServerUrl}`;
-            lobbyState = response.state;
-            renderMultiplayer();
-          });
-        });
+    function joinHostLobby(name, code) {
+      resetPeerState();
+      const cleanName = String(name || '').trim().slice(0, 20);
+      const lobbyCode = String(code || '').trim().toUpperCase();
+      if (!cleanName || !lobbyCode) {
+        entryError.textContent = 'Enter name and lobby code.';
+        return;
       }
+
+      autoServerStatus.textContent = 'Joining lobby...';
+      peer = new Peer();
+
+      peer.on('open', (id) => {
+        myId = id;
+        hostConn = peer.connect(lobbyCode, { reliable: true });
+
+        hostConn.on('open', () => {
+          hostConn.send({ type: 'join_request', name: cleanName });
+          entryError.textContent = '';
+          autoServerStatus.textContent = `Connected to lobby ${lobbyCode}`;
+        });
+
+        hostConn.on('data', (msg) => {
+          if (!msg || typeof msg !== 'object') return;
+          if (msg.type === 'state') {
+            lobbyState = msg.state;
+            renderMultiplayer();
+          }
+          if (msg.type === 'error') {
+            entryError.textContent = msg.error || 'Could not join lobby.';
+          }
+        });
+
+        hostConn.on('close', () => {
+          entryError.textContent = 'Disconnected from host lobby.';
+        });
+      });
+
+      peer.on('error', () => {
+        entryError.textContent = 'Could not join lobby. Check code/internet and retry.';
+      });
+    }
+
+    function sendAction(action) {
+      if (isHostPlayer) {
+        applyActionFromPlayer(myId, action);
+        return;
+      }
+      if (hostConn && hostConn.open) {
+        hostConn.send({ type: 'action', action });
+      }
+    }
+
+    function copyLobbyCode() {
+      if (!lobbyState?.code) return;
+      navigator.clipboard.writeText(lobbyState.code)
+        .then(() => { autoServerStatus.textContent = 'Lobby code copied.'; })
+        .catch(() => { autoServerStatus.textContent = `Lobby code: ${lobbyState.code}`; });
+    }
+
+    function shareLobby() {
+      if (!lobbyState?.code) return;
+      const text = `Join my Jinx lobby! Code: ${lobbyState.code}`;
+      const shareUrl = `${window.location.origin}${window.location.pathname}`;
+      if (navigator.share) {
+        navigator.share({ title: 'Jinx Lobby', text, url: shareUrl }).catch(() => {});
+        return;
+      }
+      const waText = encodeURIComponent(`${text}
+${shareUrl}`);
+      window.open(`https://wa.me/?text=${waText}`, '_blank');
+    }
+
+    if (!multiplayerControlsBound) {
+      multiplayerControlsBound = true;
+      startBtn.addEventListener('click', () => sendAction('start_game'));
+      askBtn.addEventListener('click', () => sendAction('ask_question'));
+      flipBtn.addEventListener('click', () => sendAction('flip_coin'));
+      nextBtn.addEventListener('click', () => sendAction('next_turn'));
+      copyLobbyBtn.addEventListener('click', copyLobbyCode);
+      shareLobbyBtn.addEventListener('click', shareLobby);
+
+      document.getElementById('create-lobby-btn').addEventListener('click', () => {
+        const name = document.getElementById('host-name').value.trim();
+        createHostLobby(name);
+      });
+
+      document.getElementById('join-lobby-btn').addEventListener('click', () => {
+        const name = document.getElementById('join-name').value.trim();
+        const code = document.getElementById('join-code').value.trim().toUpperCase();
+        joinHostLobby(name, code);
+      });
     }
 
     function playerById(id) {
       return (lobbyState?.players || []).find((p) => p.id === id);
     }
 
+    function currentTurnPlayer() {
+      if (!lobbyState || !Array.isArray(lobbyState.players)) return null;
+      return lobbyState.players[lobbyState.turnIndex] || null;
+    }
+
     function isMyTurn() {
-      return lobbyState?.turnPlayer?.id === myId;
+      return currentTurnPlayer()?.id === myId;
     }
 
     function isHost() {
@@ -743,7 +890,7 @@
         turnText.textContent = 'Waiting for host to start the game';
         statusText.textContent = 'Lobby ready. Invite friends using the code above.';
       } else {
-        turnText.textContent = `${lobbyState.turnPlayer?.name || 'Unknown'} is playing`;
+        turnText.textContent = `${currentTurnPlayer()?.name || 'Unknown'} is playing`;
         statusText.textContent = isMyTurn() ? 'Your move.' : 'Wait for the active player.';
       }
 

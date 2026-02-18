@@ -101,15 +101,11 @@ The game now starts with a main menu where players choose:
 - **Multiplayer Mode** (host lobby + friends join by code)
 
 
-### Why do I see “Realtime server not available”?
+### Multiplayer now works without running your own server
 
-Realtime mode needs a running backend server. If no server is running, you can still play immediately using **Local Mode** from the main menu.
+Realtime mode now uses PeerJS cloud signaling by default, so you can tap **Play Multiplayer** and create/join lobby directly.
 
-For mobile/cross-device play, easiest setup:
-1. Deploy `server.js` to a simple Node host (Render/Railway/Glitch).
-2. Open the same `index.html` on phones.
-3. In Multiplayer Mode, set **Realtime Server URL** to your deployed backend URL.
-4. Host creates lobby code, others join with code.
+You only need internet on both devices. No separate backend process is required in normal usage.
 
 
 ## 🔀 Merge Conflicts (Current vs Incoming) — What to choose
@@ -151,3 +147,16 @@ Expected checks:
 - Footer stays at the bottom.
 - **Play Local** opens Local Mode.
 - **Play Multiplayer** opens Multiplayer Mode.
+
+
+## ⚡ Zero-Setup Multiplayer (New)
+
+Multiplayer now uses **PeerJS cloud signaling**, so you do **not** need to run your own backend server in normal usage.
+
+How to use:
+1. Open game and tap **Play Multiplayer**.
+2. Host enters name → **Create Lobby** (instant code generated).
+3. Friends enter name + lobby code → **Join Lobby**.
+4. Use **Copy Lobby Code** or **Share Lobby** (WhatsApp-friendly) to invite quickly.
+
+> Note: This still requires internet for cross-device multiplayer, but no custom server setup in background.
