@@ -237,8 +237,8 @@
     </div>
     <script>
         let players = [];
-        let currentPlayerIndex = 0;
         let currentQuestion = "";
+        let lastQuestionIndex = -1;
         const questions = [
     { type: 'mean', text: 'Who is the ugliest person here?' },
     { type: 'nice', text: 'Who has the best smile?' },
@@ -283,9 +283,13 @@
 
         function startGame() {
             const input = document.getElementById('players').value;
-            players = input.split(',').map(name => name.trim());
+            players = input
+                .split(',')
+                .map(name => name.trim())
+                .filter(name => name.length > 0);
+
             if (players.length < 2) {
-                alert('Please enter at least two players!');
+                alert('Please enter at least two valid player names!');
                 return;
             }
 
@@ -326,7 +330,18 @@
         }
 
         function giveQuestion() {
-            const randomQuestion = questions[Math.floor(Math.random() * questions.length)];
+            let questionIndex;
+
+            if (questions.length === 1) {
+                questionIndex = 0;
+            } else {
+                do {
+                    questionIndex = Math.floor(Math.random() * questions.length);
+                } while (questionIndex === lastQuestionIndex);
+            }
+
+            lastQuestionIndex = questionIndex;
+            const randomQuestion = questions[questionIndex];
             currentQuestion = randomQuestion.text;
             document.getElementById('question').innerText = currentQuestion;
             document.getElementById('question-area').classList.remove('hidden');
@@ -340,10 +355,10 @@
             document.getElementById('modal-message').innerText = modalMessage;
 
             if (result === 'Heads') {
-                document.getElementById('modal-question').innerText = `Revealed Question: ${currentQuestion}`;
+                document.getElementById('modal-question').innerText = `Question remains a mystery!`;
                 document.getElementById('modal-question').classList.remove('hidden');
             } else {
-                document.getElementById('modal-question').innerText = `Question remains a mystery!`;
+                document.getElementById('modal-question').innerText = `Revealed Question: ${currentQuestion}`;
                 document.getElementById('modal-question').classList.remove('hidden');
             }
 
@@ -355,6 +370,13 @@
             document.getElementById('modal').classList.remove('active');
             nextPlayer();
         }
+
+        document.getElementById('players').addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                startGame();
+            }
+        });
     </script>
 </body>
 </html>
