@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jinx Realtime Multiplayer</title>
+  <style>
+    :root {
+      --primary: #6c63ff;
+      --secondary: #ffd369;
+      --bg: #f5f7ff;
+      --text: #24243a;
+      --danger: #ff5f6d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(140deg, #6c63ff, #ffd369);
+      min-height: 100vh;
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+    }
+
+    .card {
+      width: min(700px, 95vw);
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    }
+
+    h1 { margin-top: 0; color: var(--primary); }
+    h2 { margin-bottom: 8px; }
+
+    .small { color: #555; font-size: 14px; margin-top: 0; }
+
+    input {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 6px 0 10px;
+      font-size: 15px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    button.secondary { background: #434368; }
+    button.warning { background: var(--danger); }
+
+    .hidden { display: none; }
+
+    .badge {
+      display: inline-block;
+      background: rgba(108, 99, 255, 0.12);
+      color: var(--primary);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-weight: 700;
+      margin-right: 8px;
+      margin-bottom: 10px;
+    }
+
+    ul {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin: 8px 0;
+      list-style: none;
+    }
+
+    li { padding: 6px 0; border-bottom: 1px solid #e7e8f2; }
+    li:last-child { border-bottom: none; }
+
+    .status {
+      border-radius: 10px;
+      background: #f1f5ff;
+      border: 1px solid #dde4ff;
+      padding: 10px;
+      margin-top: 8px;
+    }
+
+    .question {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #23234a;
+      min-height: 24px;
+    }
+
+    .result {
+      margin-top: 8px;
+      font-weight: 700;
+      color: #444;
+    }
+
+    .link-row {
+      margin-top: 12px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Jinx Realtime Multiplayer (Beta)</h1>
+    <p class="small">Host creates a lobby code. Friends join from their own devices and play synchronized turns.</p>
+
+    <div id="entry">
+      <div class="row">
+        <div>
+          <h2>Create Lobby</h2>
+          <input id="host-name" placeholder="Your name" maxlength="20" />
+          <button id="create-btn">Create Lobby</button>
+        </div>
+        <div>
+          <h2>Join Lobby</h2>
+          <input id="join-name" placeholder="Your name" maxlength="20" />
+          <input id="join-code" placeholder="Lobby code" maxlength="6" />
+          <button id="join-btn" class="secondary">Join Lobby</button>
+        </div>
+      </div>
+      <div id="entry-error" class="result"></div>
+    </div>
+
+    <div id="lobby" class="hidden">
+      <span id="code-badge" class="badge"></span>
+      <span id="round-badge" class="badge"></span>
+      <div class="status">
+        <strong>Turn:</strong> <span id="turn-text">Waiting...</span><br />
+        <strong>Host:</strong> <span id="host-text">-</span>
+      </div>
+
+      <h3>Players</h3>
+      <ul id="players-list"></ul>
+
+      <div id="controls">
+        <button id="start-btn" class="secondary hidden">Start Game</button>
+        <button id="ask-btn" class="hidden">Give Question</button>
+        <button id="flip-btn" class="hidden">Flip Coin</button>
+        <button id="next-btn" class="warning hidden">Next Turn</button>
+      </div>
+
+      <div class="question" id="question-text"></div>
+      <div class="result" id="coin-text"></div>
+      <div class="result" id="status-text"></div>
+    </div>
+
+    <div class="link-row">
+      Prefer same-device mode? <a href="index.html">Open local game</a>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let myId = null;
+    let lobbyState = null;
+
+    const entry = document.getElementById('entry');
+    const lobby = document.getElementById('lobby');
+    const entryError = document.getElementById('entry-error');
+
+    const codeBadge = document.getElementById('code-badge');
+    const roundBadge = document.getElementById('round-badge');
+    const turnText = document.getElementById('turn-text');
+    const hostText = document.getElementById('host-text');
+    const playersList = document.getElementById('players-list');
+
+    const startBtn = document.getElementById('start-btn');
+    const askBtn = document.getElementById('ask-btn');
+    const flipBtn = document.getElementById('flip-btn');
+    const nextBtn = document.getElementById('next-btn');
+
+    const questionText = document.getElementById('question-text');
+    const coinText = document.getElementById('coin-text');
+    const statusText = document.getElementById('status-text');
+
+    socket.on('connect', () => {
+      myId = socket.id;
+    });
+
+    socket.on('lobby_state', (state) => {
+      lobbyState = state;
+      render();
+    });
+
+    function playerById(id) {
+      return (lobbyState?.players || []).find((p) => p.id === id);
+    }
+
+    function isMyTurn() {
+      return lobbyState?.turnPlayer?.id === myId;
+    }
+
+    function isHost() {
+      return lobbyState?.hostId === myId;
+    }
+
+    function render() {
+      if (!lobbyState) return;
+
+      entry.classList.add('hidden');
+      lobby.classList.remove('hidden');
+
+      codeBadge.textContent = `Lobby: ${lobbyState.code}`;
+      roundBadge.textContent = `Round ${lobbyState.round}`;
+
+      const host = playerById(lobbyState.hostId);
+      hostText.textContent = host ? host.name : 'Unknown';
+
+      playersList.innerHTML = '';
+      lobbyState.players.forEach((p, index) => {
+        const li = document.createElement('li');
+        const tags = [];
+        if (p.id === lobbyState.hostId) tags.push('Host');
+        if (lobbyState.turnIndex === index && lobbyState.started) tags.push('Turn');
+        if (p.id === myId) tags.push('You');
+        li.textContent = `${p.name}${tags.length ? ` (${tags.join(', ')})` : ''}`;
+        playersList.appendChild(li);
+      });
+
+      if (!lobbyState.started) {
+        turnText.textContent = 'Waiting for host to start the game';
+        statusText.textContent = 'Lobby ready. Invite friends using the code above.';
+      } else {
+        turnText.textContent = `${lobbyState.turnPlayer?.name || 'Unknown'} is playing`;
+        statusText.textContent = isMyTurn() ? 'Your move.' : 'Wait for the active player.';
+      }
+
+      startBtn.classList.toggle('hidden', !(isHost() && !lobbyState.started && lobbyState.players.length >= 2));
+
+      askBtn.classList.toggle('hidden', !(lobbyState.started && isMyTurn() && !lobbyState.questionAsked));
+      flipBtn.classList.toggle('hidden', !(lobbyState.started && isMyTurn() && lobbyState.questionAsked && !lobbyState.coinResult));
+      nextBtn.classList.toggle('hidden', !(lobbyState.started && lobbyState.coinResult && (isMyTurn() || isHost())));
+
+      if (!lobbyState.started) {
+        questionText.textContent = '';
+        coinText.textContent = '';
+        return;
+      }
+
+      if (lobbyState.questionAsked) {
+        questionText.textContent = lobbyState.questionVisible
+          ? `Question: ${lobbyState.currentQuestion}`
+          : 'Question selected. Toss decides if it is revealed.';
+      } else {
+        questionText.textContent = '';
+      }
+
+      if (lobbyState.coinResult) {
+        if (lobbyState.coinResult === 'Heads') {
+          coinText.textContent = `Coin: Heads — Question is revealed.`;
+        } else {
+          coinText.textContent = `Coin: Tails — Question stays a mystery.`;
+        }
+      } else {
+        coinText.textContent = '';
+      }
+    }
+
+    function showError(message) {
+      entryError.textContent = message || '';
+    }
+
+    document.getElementById('create-btn').addEventListener('click', () => {
+      const name = document.getElementById('host-name').value.trim();
+      socket.emit('create_lobby', { name }, (response) => {
+        if (!response.ok) {
+          showError(response.error);
+          return;
+        }
+        showError('');
+        lobbyState = response.state;
+        render();
+      });
+    });
+
+    document.getElementById('join-btn').addEventListener('click', () => {
+      const name = document.getElementById('join-name').value.trim();
+      const code = document.getElementById('join-code').value.trim().toUpperCase();
+      socket.emit('join_lobby', { name, code }, (response) => {
+        if (!response.ok) {
+          showError(response.error);
+          return;
+        }
+        showError('');
+        lobbyState = response.state;
+        render();
+      });
+    });
+
+    startBtn.addEventListener('click', () => socket.emit('start_game'));
+    askBtn.addEventListener('click', () => socket.emit('ask_question'));
+    flipBtn.addEventListener('click', () => socket.emit('flip_coin'));
+    nextBtn.addEventListener('click', () => socket.emit('next_turn'));
+  </script>
+</body>
+</html>
