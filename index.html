@@ -199,6 +199,21 @@
       margin-top: 12px;
     }
 
+    .tab-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .tab-nav .button {
+      margin: 0;
+    }
+
+    .tab-nav .button.active {
+      background: #2f2f52;
+    }
+
     .game-stage {
       margin-top: 14px;
       padding: 14px;
@@ -376,6 +391,11 @@
       <p id="auto-server-status" class="result"></p>
 
       <div id="multiplayer-lobby" class="hidden">
+        <div class="tab-nav">
+          <button id="lobby-tab-btn" class="button secondary active">Lobby</button>
+          <button id="game-tab-btn" class="button" disabled>Game Screen</button>
+        </div>
+
         <span id="code-badge" class="badge"></span>
         <span id="multi-round-badge" class="badge"></span>
 
@@ -640,11 +660,27 @@
     const shareLobbyBtn = document.getElementById('share-lobby-btn');
     const multiplayerWaiting = document.getElementById('multiplayer-waiting');
     const multiplayerGame = document.getElementById('multiplayer-game');
+    const lobbyTabBtn = document.getElementById('lobby-tab-btn');
+    const gameTabBtn = document.getElementById('game-tab-btn');
     const turnTextGame = document.getElementById('turn-text-game');
     const hostTextGame = document.getElementById('host-text-game');
     const answerPlayerSelect = document.getElementById('answer-player-select');
     const answerBtn = document.getElementById('answer-btn');
     const answerText = document.getElementById('answer-text');
+    let activeMultiplayerTab = 'lobby';
+
+    function switchMultiplayerTab(tab) {
+      const canShowGame = !!(lobbyState && lobbyState.started);
+      if (tab === 'game' && !canShowGame) return;
+
+      activeMultiplayerTab = tab;
+      const showGame = activeMultiplayerTab === 'game' && canShowGame;
+
+      multiplayerWaiting.classList.toggle('hidden', showGame);
+      multiplayerGame.classList.toggle('hidden', !showGame);
+      lobbyTabBtn.classList.toggle('active', !showGame);
+      gameTabBtn.classList.toggle('active', showGame);
+    }
 
     function randomLobbyCode() {
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -991,6 +1027,8 @@ ${shareUrl}`);
       });
       copyLobbyBtn.addEventListener('click', copyLobbyCode);
       shareLobbyBtn.addEventListener('click', shareLobby);
+      lobbyTabBtn.addEventListener('click', () => switchMultiplayerTab('lobby'));
+      gameTabBtn.addEventListener('click', () => switchMultiplayerTab('game'));
 
       document.getElementById('create-lobby-btn').addEventListener('click', () => {
         const name = document.getElementById('host-name').value.trim();
@@ -1069,8 +1107,11 @@ ${shareUrl}`);
       }
 
       startBtn.classList.toggle('hidden', !(isHost() && !lobbyState.started && lobbyState.players.length >= 2));
-      multiplayerWaiting.classList.toggle('hidden', lobbyState.started);
-      multiplayerGame.classList.toggle('hidden', !lobbyState.started);
+      gameTabBtn.disabled = !lobbyState.started;
+      if (!lobbyState.started) {
+        activeMultiplayerTab = 'lobby';
+      }
+      switchMultiplayerTab(activeMultiplayerTab);
 
       const turnMessage = lobbyState.started
         ? `${currentTurnPlayer()?.name || 'Unknown'} is playing`
