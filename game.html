@@ -168,7 +168,8 @@
       nextBtn.classList.toggle('hidden', !(lobbyState.coinResult && (isMyTurn() || isHost())));
 
       if (lobbyState.questionAsked) {
-        questionText.textContent = lobbyState.questionVisible
+        const canSeeQuestion = lobbyState.questionVisible || isMyTurn();
+        questionText.textContent = canSeeQuestion
           ? `Question: ${lobbyState.currentQuestion}`
           : 'Question selected. Toss decides if it is revealed.';
       } else {
