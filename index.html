@@ -199,6 +199,21 @@
       margin-top: 12px;
     }
 
+    .tab-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .tab-nav .button {
+      margin: 0;
+    }
+
+    .tab-nav .button.active {
+      background: #2f2f52;
+    }
+
     .game-stage {
       margin-top: 14px;
       padding: 14px;
@@ -376,10 +391,15 @@
       <p id="auto-server-status" class="result"></p>
 
       <div id="multiplayer-lobby" class="hidden">
-        <span id="code-badge" class="badge"></span>
-        <span id="multi-round-badge" class="badge"></span>
+        <div class="tab-nav">
+          <button id="lobby-tab-btn" class="button secondary active">Lobby</button>
+          <button id="game-tab-btn" class="button" disabled>Game Screen</button>
+        </div>
 
-        <div id="multiplayer-waiting">
+        <div id="multiplayer-lobby-screen">
+          <span id="code-badge" class="badge"></span>
+          <span id="multi-round-badge" class="badge"></span>
+
           <div>
             <button id="copy-lobby-btn" class="button secondary">Copy Lobby Code</button>
             <button id="share-lobby-btn" class="button">Share Lobby</button>
@@ -398,30 +418,35 @@
           </div>
         </div>
 
-        <div id="multiplayer-game" class="game-stage hidden">
-          <h3>Game Screen</h3>
-          <div class="status">
-            <strong>Turn:</strong> <span id="turn-text-game">Waiting...</span><br />
-            <strong>Host:</strong> <span id="host-text-game">-</span>
-          </div>
+        <div id="multiplayer-game-screen" class="hidden">
+          <span id="code-badge-game" class="badge"></span>
+          <span id="multi-round-badge-game" class="badge"></span>
 
-          <div>
-            <button id="ask-btn" class="button">Give Question</button>
-            <button id="flip-btn" class="button">Flip Coin</button>
-            <button id="next-btn" class="button warning">Next Turn</button>
-          </div>
+          <div id="multiplayer-game" class="game-stage">
+            <h3>Game Screen</h3>
+            <div class="status">
+              <strong>Turn:</strong> <span id="turn-text-game">Waiting...</span><br />
+              <strong>Host:</strong> <span id="host-text-game">-</span>
+            </div>
 
-          <div class="answer-row">
-            <select id="answer-player-select">
-              <option value="">Choose player name as your answer</option>
-            </select>
-            <button id="answer-btn" class="button secondary">Answer Name</button>
-          </div>
+            <div>
+              <button id="ask-btn" class="button">Give Question</button>
+              <button id="flip-btn" class="button">Flip Coin</button>
+              <button id="next-btn" class="button warning">Next Turn</button>
+            </div>
 
-          <div id="answer-text" class="result"></div>
-          <div id="question-text" class="question"></div>
-          <div id="coin-text" class="result"></div>
-          <div id="status-text" class="result"></div>
+            <div class="answer-row">
+              <select id="answer-player-select">
+                <option value="">Choose player name as your answer</option>
+              </select>
+              <button id="answer-btn" class="button secondary">Answer Name</button>
+            </div>
+
+            <div id="answer-text" class="result"></div>
+            <div id="question-text" class="question"></div>
+            <div id="coin-text" class="result"></div>
+            <div id="status-text" class="result"></div>
+          </div>
         </div>
       </div>
 
@@ -625,7 +650,9 @@
     const autoServerStatus = document.getElementById('auto-server-status');
     const multiplayerLobby = document.getElementById('multiplayer-lobby');
     const codeBadge = document.getElementById('code-badge');
+    const codeBadgeGame = document.getElementById('code-badge-game');
     const multiRoundBadge = document.getElementById('multi-round-badge');
+    const multiRoundBadgeGame = document.getElementById('multi-round-badge-game');
     const turnText = document.getElementById('turn-text');
     const hostText = document.getElementById('host-text');
     const playersList = document.getElementById('players-list');
@@ -638,13 +665,29 @@
     const statusText = document.getElementById('status-text');
     const copyLobbyBtn = document.getElementById('copy-lobby-btn');
     const shareLobbyBtn = document.getElementById('share-lobby-btn');
-    const multiplayerWaiting = document.getElementById('multiplayer-waiting');
-    const multiplayerGame = document.getElementById('multiplayer-game');
+    const multiplayerLobbyScreen = document.getElementById('multiplayer-lobby-screen');
+    const multiplayerGameScreen = document.getElementById('multiplayer-game-screen');
+    const lobbyTabBtn = document.getElementById('lobby-tab-btn');
+    const gameTabBtn = document.getElementById('game-tab-btn');
     const turnTextGame = document.getElementById('turn-text-game');
     const hostTextGame = document.getElementById('host-text-game');
     const answerPlayerSelect = document.getElementById('answer-player-select');
     const answerBtn = document.getElementById('answer-btn');
     const answerText = document.getElementById('answer-text');
+    let activeMultiplayerTab = 'lobby';
+
+    function switchMultiplayerTab(tab) {
+      const canShowGame = !!(lobbyState && lobbyState.started);
+      if (tab === 'game' && !canShowGame) return;
+
+      activeMultiplayerTab = tab;
+      const showGame = activeMultiplayerTab === 'game' && canShowGame;
+
+      multiplayerLobbyScreen.classList.toggle('hidden', showGame);
+      multiplayerGameScreen.classList.toggle('hidden', !showGame);
+      lobbyTabBtn.classList.toggle('active', !showGame);
+      gameTabBtn.classList.toggle('active', showGame);
+    }
 
     function randomLobbyCode() {
       const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -991,6 +1034,8 @@ ${shareUrl}`);
       });
       copyLobbyBtn.addEventListener('click', copyLobbyCode);
       shareLobbyBtn.addEventListener('click', shareLobby);
+      lobbyTabBtn.addEventListener('click', () => switchMultiplayerTab('lobby'));
+      gameTabBtn.addEventListener('click', () => switchMultiplayerTab('game'));
 
       document.getElementById('create-lobby-btn').addEventListener('click', () => {
         const name = document.getElementById('host-name').value.trim();
@@ -1031,7 +1076,9 @@ ${shareUrl}`);
 
       multiplayerLobby.classList.remove('hidden');
       codeBadge.textContent = `Lobby: ${lobbyState.code}`;
+      codeBadgeGame.textContent = `Lobby: ${lobbyState.code}`;
       multiRoundBadge.textContent = `Round ${lobbyState.round}`;
+      multiRoundBadgeGame.textContent = `Round ${lobbyState.round}`;
 
       const host = playerById(lobbyState.hostId);
       hostText.textContent = host ? host.name : 'Unknown';
@@ -1069,8 +1116,11 @@ ${shareUrl}`);
       }
 
       startBtn.classList.toggle('hidden', !(isHost() && !lobbyState.started && lobbyState.players.length >= 2));
-      multiplayerWaiting.classList.toggle('hidden', lobbyState.started);
-      multiplayerGame.classList.toggle('hidden', !lobbyState.started);
+      gameTabBtn.disabled = !lobbyState.started;
+      if (!lobbyState.started) {
+        activeMultiplayerTab = 'lobby';
+      }
+      switchMultiplayerTab(activeMultiplayerTab);
 
       const turnMessage = lobbyState.started
         ? `${currentTurnPlayer()?.name || 'Unknown'} is playing`
@@ -1106,9 +1156,10 @@ ${shareUrl}`);
       }
 
       if (lobbyState.questionAsked) {
-        questionText.textContent = lobbyState.questionVisible
+        const canSeeQuestion = lobbyState.questionVisible || isMyTurn();
+        questionText.textContent = canSeeQuestion
           ? `Question: ${lobbyState.currentQuestion}`
-          : 'Question selected. Answer with a player name, then toss the coin.';
+          : 'Question selected. Waiting for coin toss result.';
       } else {
         questionText.textContent = '';
       }
