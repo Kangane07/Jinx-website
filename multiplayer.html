@@ -1,2 +1,412 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8" /><meta http-equiv="refresh" content="0; url=index.html" /><title>Redirecting...</title></head><body>Redirecting to <a href="index.html">index.html</a>...</body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Jinx Multiplayer Lobby</title>
+  <style>
+    :root {
+      --primary: #6c63ff;
+      --bg: #f5f7ff;
+      --text: #24243a;
+      --danger: #ff5f6d;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(140deg, #6c63ff, #ffd369);
+      min-height: 100vh;
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+    }
+
+    .card {
+      width: min(700px, 95vw);
+      background: white;
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    }
+
+    h1 { margin-top: 0; color: var(--primary); }
+    h2 { margin-bottom: 8px; }
+
+    .small { color: #555; font-size: 14px; margin-top: 0; }
+
+    input {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 6px 0 10px;
+      font-size: 15px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    button.secondary { background: #434368; }
+    button.warning { background: var(--danger); }
+
+    button[disabled] { opacity: 0.55; cursor: not-allowed; }
+
+    .hidden { display: none; }
+
+    #retry-connect-btn { display: none; }
+
+    .badge {
+      display: inline-block;
+      background: rgba(108, 99, 255, 0.12);
+      color: var(--primary);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-weight: 700;
+      margin-right: 8px;
+      margin-bottom: 10px;
+    }
+
+    ul {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin: 8px 0;
+      list-style: none;
+    }
+
+    li {
+      padding: 8px 0;
+      border-bottom: 1px solid #e7e8f2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    li:last-child { border-bottom: none; }
+
+    .status {
+      border-radius: 10px;
+      background: #f1f5ff;
+      border: 1px solid #dde4ff;
+      padding: 10px;
+      margin-top: 8px;
+    }
+
+    .result {
+      margin-top: 8px;
+      font-weight: 700;
+      color: #444;
+      min-height: 20px;
+    }
+
+    .player-name { flex: 1; }
+
+    .kick-btn {
+      background: var(--danger);
+      margin: 0;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Jinx Realtime Lobby</h1>
+    <p class="small">Create or join a lobby, manage players, then start and move to the game-only screen.</p>
+
+    <div id="entry">
+      <div class="row">
+        <div>
+          <h2>Create Lobby</h2>
+          <input id="host-name" placeholder="Your name" maxlength="20" />
+          <button id="create-btn" disabled>Create Lobby</button>
+        </div>
+        <div>
+          <h2>Join Lobby</h2>
+          <input id="join-name" placeholder="Your name" maxlength="20" />
+          <input id="join-code" placeholder="Lobby code" maxlength="6" />
+          <button id="join-btn" class="secondary" disabled>Join Lobby</button>
+        </div>
+      </div>
+      <div id="entry-error" class="result"></div>
+      <div id="socket-status" class="small">Connecting to server...</div>
+      <button id="retry-connect-btn" class="secondary">Retry Connection</button>
+    </div>
+
+    <div id="lobby" class="hidden">
+      <span id="code-badge" class="badge"></span>
+      <span id="round-badge" class="badge"></span>
+      <div class="status">
+        <strong>Status:</strong> <span id="turn-text">Waiting...</span><br />
+        <strong>Host:</strong> <span id="host-text">-</span>
+      </div>
+
+      <h3>Players</h3>
+      <ul id="players-list"></ul>
+
+      <div id="controls">
+        <button id="start-btn" class="secondary hidden">Start Game</button>
+        <button id="go-game-btn" class="hidden">Open Game Screen</button>
+      </div>
+
+      <div class="result" id="status-text"></div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io({ autoConnect: false, reconnectionAttempts: 4, timeout: 5000 });
+    let myId = null;
+    let lobbyState = null;
+
+    const entry = document.getElementById('entry');
+    const lobby = document.getElementById('lobby');
+    const entryError = document.getElementById('entry-error');
+
+    const codeBadge = document.getElementById('code-badge');
+    const roundBadge = document.getElementById('round-badge');
+    const turnText = document.getElementById('turn-text');
+    const hostText = document.getElementById('host-text');
+    const playersList = document.getElementById('players-list');
+
+    const startBtn = document.getElementById('start-btn');
+    const goGameBtn = document.getElementById('go-game-btn');
+    const statusText = document.getElementById('status-text');
+    const createBtn = document.getElementById('create-btn');
+    const joinBtn = document.getElementById('join-btn');
+    const socketStatus = document.getElementById('socket-status');
+    const retryConnectBtn = document.getElementById('retry-connect-btn');
+    let connectWaitTimer = null;
+
+    function updateConnectionUI() {
+      const connected = socket.connected;
+      createBtn.disabled = !connected;
+      joinBtn.disabled = !connected;
+      retryConnectBtn.style.display = connected ? 'none' : 'inline-block';
+      socketStatus.textContent = connected
+        ? 'Connected.'
+        : 'Connecting to server... If this takes too long, tap Retry Connection.';
+    }
+
+    function startConnectWatchdog() {
+      if (connectWaitTimer) {
+        clearTimeout(connectWaitTimer);
+      }
+      connectWaitTimer = setTimeout(() => {
+        if (!socket.connected) {
+          socketStatus.textContent = 'Unable to reach server. Tap Retry Connection.';
+          showError('Could not connect to realtime server. Please retry.');
+          createBtn.disabled = true;
+          joinBtn.disabled = true;
+          retryConnectBtn.style.display = 'inline-block';
+        }
+      }, 5000);
+    }
+
+    function emitWithAck(event, payload, callback) {
+      if (!socket.connected) {
+        showError('Still connecting to server. Please wait a moment.');
+        return;
+      }
+
+      let settled = false;
+      const timeoutId = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        showError('Server did not respond. Please retry.');
+      }, 6000);
+
+      socket.emit(event, payload, (response) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        callback(response);
+      });
+    }
+
+    function storeSession(code, playerKey) {
+      localStorage.setItem('jinxSession', JSON.stringify({ code, playerKey }));
+    }
+
+    function getSession() {
+      const raw = localStorage.getItem('jinxSession');
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch (_error) {
+        return null;
+      }
+    }
+
+    function openGamePage() {
+      window.location.href = 'game.html';
+    }
+
+    function playerById(id) {
+      return (lobbyState?.players || []).find((p) => p.id === id);
+    }
+
+    function isHost() {
+      return lobbyState?.hostId === myId;
+    }
+
+    function render() {
+      if (!lobbyState) return;
+
+      entry.classList.add('hidden');
+      lobby.classList.remove('hidden');
+
+      codeBadge.textContent = `Lobby: ${lobbyState.code}`;
+      roundBadge.textContent = `Round ${lobbyState.round}`;
+
+      const host = playerById(lobbyState.hostId);
+      hostText.textContent = host ? host.name : 'Unknown';
+
+      playersList.innerHTML = '';
+      lobbyState.players.forEach((p) => {
+        const li = document.createElement('li');
+        const tags = [];
+        if (p.id === lobbyState.hostId) tags.push('Host');
+        if (p.id === myId) tags.push('You');
+
+        const name = document.createElement('span');
+        name.className = 'player-name';
+        name.textContent = `${p.name}${tags.length ? ` (${tags.join(', ')})` : ''}`;
+        li.appendChild(name);
+
+        if (isHost() && !lobbyState.started && p.id !== myId) {
+          const kickBtn = document.createElement('button');
+          kickBtn.className = 'kick-btn';
+          kickBtn.textContent = 'Remove';
+          kickBtn.addEventListener('click', () => {
+            socket.emit('remove_player', { targetId: p.id });
+          });
+          li.appendChild(kickBtn);
+        }
+
+        playersList.appendChild(li);
+      });
+
+      if (!lobbyState.started) {
+        turnText.textContent = 'Waiting for host to start the game';
+        statusText.textContent = 'Host can remove players before starting.';
+      } else {
+        turnText.textContent = 'Game started.';
+        statusText.textContent = 'Move to game page to continue.';
+      }
+
+      startBtn.classList.toggle('hidden', !(isHost() && !lobbyState.started && lobbyState.players.length >= 2));
+      goGameBtn.classList.toggle('hidden', !lobbyState.started);
+
+      if (lobbyState.started) {
+        openGamePage();
+      }
+    }
+
+    function showError(message) {
+      entryError.textContent = message || '';
+    }
+
+    socket.on('connect', () => {
+      myId = socket.id;
+      if (connectWaitTimer) clearTimeout(connectWaitTimer);
+      updateConnectionUI();
+      const session = getSession();
+      if (session?.code && session?.playerKey) {
+        socket.emit('reconnect_lobby', session, (response) => {
+          if (!response?.ok) return;
+          lobbyState = response.state;
+          render();
+        });
+      }
+    });
+
+    socket.on('disconnect', () => {
+      updateConnectionUI();
+      startConnectWatchdog();
+    });
+
+    socket.on('connect_error', () => {
+      socketStatus.textContent = 'Unable to reach server. Tap Retry Connection.';
+      showError('Realtime server unavailable. Check internet and retry.');
+      retryConnectBtn.style.display = 'inline-block';
+    });
+
+    socket.on('lobby_state', (state) => {
+      lobbyState = state;
+      render();
+    });
+
+    socket.on('player_removed', ({ targetId }) => {
+      if (targetId === myId) {
+        localStorage.removeItem('jinxSession');
+        window.location.reload();
+      }
+    });
+
+    createBtn.addEventListener('click', () => {
+      const name = document.getElementById('host-name').value.trim();
+      emitWithAck('create_lobby', { name }, (response) => {
+        if (!response.ok) {
+          showError(response.error);
+          return;
+        }
+        showError('');
+        storeSession(response.code, response.playerKey);
+        lobbyState = response.state;
+        render();
+      });
+    });
+
+    joinBtn.addEventListener('click', () => {
+      const name = document.getElementById('join-name').value.trim();
+      const code = document.getElementById('join-code').value.trim().toUpperCase();
+      emitWithAck('join_lobby', { name, code }, (response) => {
+        if (!response.ok) {
+          showError(response.error);
+          return;
+        }
+        showError('');
+        storeSession(response.code, response.playerKey);
+        lobbyState = response.state;
+        render();
+      });
+    });
+
+    startBtn.addEventListener('click', () => socket.emit('start_game'));
+    goGameBtn.addEventListener('click', openGamePage);
+    retryConnectBtn.addEventListener('click', () => {
+      showError('');
+      updateConnectionUI();
+      socket.connect();
+      startConnectWatchdog();
+    });
+
+    updateConnectionUI();
+    socket.connect();
+    startConnectWatchdog();
+  </script>
+</body>
+</html>
