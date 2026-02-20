@@ -396,10 +396,10 @@
           <button id="game-tab-btn" class="button" disabled>Game Screen</button>
         </div>
 
-        <span id="code-badge" class="badge"></span>
-        <span id="multi-round-badge" class="badge"></span>
+        <div id="multiplayer-lobby-screen">
+          <span id="code-badge" class="badge"></span>
+          <span id="multi-round-badge" class="badge"></span>
 
-        <div id="multiplayer-waiting">
           <div>
             <button id="copy-lobby-btn" class="button secondary">Copy Lobby Code</button>
             <button id="share-lobby-btn" class="button">Share Lobby</button>
@@ -418,30 +418,35 @@
           </div>
         </div>
 
-        <div id="multiplayer-game" class="game-stage hidden">
-          <h3>Game Screen</h3>
-          <div class="status">
-            <strong>Turn:</strong> <span id="turn-text-game">Waiting...</span><br />
-            <strong>Host:</strong> <span id="host-text-game">-</span>
-          </div>
+        <div id="multiplayer-game-screen" class="hidden">
+          <span id="code-badge-game" class="badge"></span>
+          <span id="multi-round-badge-game" class="badge"></span>
 
-          <div>
-            <button id="ask-btn" class="button">Give Question</button>
-            <button id="flip-btn" class="button">Flip Coin</button>
-            <button id="next-btn" class="button warning">Next Turn</button>
-          </div>
+          <div id="multiplayer-game" class="game-stage">
+            <h3>Game Screen</h3>
+            <div class="status">
+              <strong>Turn:</strong> <span id="turn-text-game">Waiting...</span><br />
+              <strong>Host:</strong> <span id="host-text-game">-</span>
+            </div>
 
-          <div class="answer-row">
-            <select id="answer-player-select">
-              <option value="">Choose player name as your answer</option>
-            </select>
-            <button id="answer-btn" class="button secondary">Answer Name</button>
-          </div>
+            <div>
+              <button id="ask-btn" class="button">Give Question</button>
+              <button id="flip-btn" class="button">Flip Coin</button>
+              <button id="next-btn" class="button warning">Next Turn</button>
+            </div>
 
-          <div id="answer-text" class="result"></div>
-          <div id="question-text" class="question"></div>
-          <div id="coin-text" class="result"></div>
-          <div id="status-text" class="result"></div>
+            <div class="answer-row">
+              <select id="answer-player-select">
+                <option value="">Choose player name as your answer</option>
+              </select>
+              <button id="answer-btn" class="button secondary">Answer Name</button>
+            </div>
+
+            <div id="answer-text" class="result"></div>
+            <div id="question-text" class="question"></div>
+            <div id="coin-text" class="result"></div>
+            <div id="status-text" class="result"></div>
+          </div>
         </div>
       </div>
 
@@ -645,7 +650,9 @@
     const autoServerStatus = document.getElementById('auto-server-status');
     const multiplayerLobby = document.getElementById('multiplayer-lobby');
     const codeBadge = document.getElementById('code-badge');
+    const codeBadgeGame = document.getElementById('code-badge-game');
     const multiRoundBadge = document.getElementById('multi-round-badge');
+    const multiRoundBadgeGame = document.getElementById('multi-round-badge-game');
     const turnText = document.getElementById('turn-text');
     const hostText = document.getElementById('host-text');
     const playersList = document.getElementById('players-list');
@@ -658,8 +665,8 @@
     const statusText = document.getElementById('status-text');
     const copyLobbyBtn = document.getElementById('copy-lobby-btn');
     const shareLobbyBtn = document.getElementById('share-lobby-btn');
-    const multiplayerWaiting = document.getElementById('multiplayer-waiting');
-    const multiplayerGame = document.getElementById('multiplayer-game');
+    const multiplayerLobbyScreen = document.getElementById('multiplayer-lobby-screen');
+    const multiplayerGameScreen = document.getElementById('multiplayer-game-screen');
     const lobbyTabBtn = document.getElementById('lobby-tab-btn');
     const gameTabBtn = document.getElementById('game-tab-btn');
     const turnTextGame = document.getElementById('turn-text-game');
@@ -676,8 +683,8 @@
       activeMultiplayerTab = tab;
       const showGame = activeMultiplayerTab === 'game' && canShowGame;
 
-      multiplayerWaiting.classList.toggle('hidden', showGame);
-      multiplayerGame.classList.toggle('hidden', !showGame);
+      multiplayerLobbyScreen.classList.toggle('hidden', showGame);
+      multiplayerGameScreen.classList.toggle('hidden', !showGame);
       lobbyTabBtn.classList.toggle('active', !showGame);
       gameTabBtn.classList.toggle('active', showGame);
     }
@@ -845,12 +852,6 @@
         lobbyState.questionVisible = false;
         lobbyState.answerByPlayerId = '';
         lobbyState.answerByPlayerName = '';
-      }
-
-      if (action?.type === 'remove_player') {
-        if (!isHost || lobbyState.started || action.targetId === lobbyState.hostId) return;
-        removePlayer(action.targetId);
-        return;
       }
 
       if (action?.type === 'remove_player') {
@@ -1069,7 +1070,9 @@ ${shareUrl}`);
 
       multiplayerLobby.classList.remove('hidden');
       codeBadge.textContent = `Lobby: ${lobbyState.code}`;
+      codeBadgeGame.textContent = `Lobby: ${lobbyState.code}`;
       multiRoundBadge.textContent = `Round ${lobbyState.round}`;
+      multiRoundBadgeGame.textContent = `Round ${lobbyState.round}`;
 
       const host = playerById(lobbyState.hostId);
       hostText.textContent = host ? host.name : 'Unknown';
@@ -1147,9 +1150,10 @@ ${shareUrl}`);
       }
 
       if (lobbyState.questionAsked) {
-        questionText.textContent = lobbyState.questionVisible
+        const canSeeQuestion = lobbyState.questionVisible || isMyTurn();
+        questionText.textContent = canSeeQuestion
           ? `Question: ${lobbyState.currentQuestion}`
-          : 'Question selected. Answer with a player name, then toss the coin.';
+          : 'Question selected. Waiting for coin toss result.';
       } else {
         questionText.textContent = '';
       }
