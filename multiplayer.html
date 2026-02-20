@@ -70,6 +70,8 @@
     button.secondary { background: #434368; }
     button.warning { background: var(--danger); }
 
+    button[disabled] { opacity: 0.55; cursor: not-allowed; }
+
     .hidden { display: none; }
 
     .badge {
@@ -137,16 +139,17 @@
         <div>
           <h2>Create Lobby</h2>
           <input id="host-name" placeholder="Your name" maxlength="20" />
-          <button id="create-btn">Create Lobby</button>
+          <button id="create-btn" disabled>Create Lobby</button>
         </div>
         <div>
           <h2>Join Lobby</h2>
           <input id="join-name" placeholder="Your name" maxlength="20" />
           <input id="join-code" placeholder="Lobby code" maxlength="6" />
-          <button id="join-btn" class="secondary">Join Lobby</button>
+          <button id="join-btn" class="secondary" disabled>Join Lobby</button>
         </div>
       </div>
       <div id="entry-error" class="result"></div>
+      <div id="socket-status" class="small">Connecting to server...</div>
     </div>
 
     <div id="lobby" class="hidden">
@@ -188,6 +191,37 @@
     const startBtn = document.getElementById('start-btn');
     const goGameBtn = document.getElementById('go-game-btn');
     const statusText = document.getElementById('status-text');
+    const createBtn = document.getElementById('create-btn');
+    const joinBtn = document.getElementById('join-btn');
+    const socketStatus = document.getElementById('socket-status');
+
+    function updateConnectionUI() {
+      const connected = socket.connected;
+      createBtn.disabled = !connected;
+      joinBtn.disabled = !connected;
+      socketStatus.textContent = connected ? 'Connected.' : 'Connecting to server...';
+    }
+
+    function emitWithAck(event, payload, callback) {
+      if (!socket.connected) {
+        showError('Still connecting to server. Please wait a moment.');
+        return;
+      }
+
+      let settled = false;
+      const timeoutId = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        showError('Server did not respond. Please retry.');
+      }, 6000);
+
+      socket.emit(event, payload, (response) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        callback(response);
+      });
+    }
 
     function storeSession(code, playerKey) {
       localStorage.setItem('jinxSession', JSON.stringify({ code, playerKey }));
@@ -274,6 +308,7 @@
 
     socket.on('connect', () => {
       myId = socket.id;
+      updateConnectionUI();
       const session = getSession();
       if (session?.code && session?.playerKey) {
         socket.emit('reconnect_lobby', session, (response) => {
@@ -282,6 +317,10 @@
           render();
         });
       }
+    });
+
+    socket.on('disconnect', () => {
+      updateConnectionUI();
     });
 
     socket.on('lobby_state', (state) => {
@@ -296,9 +335,9 @@
       }
     });
 
-    document.getElementById('create-btn').addEventListener('click', () => {
+    createBtn.addEventListener('click', () => {
       const name = document.getElementById('host-name').value.trim();
-      socket.emit('create_lobby', { name }, (response) => {
+      emitWithAck('create_lobby', { name }, (response) => {
         if (!response.ok) {
           showError(response.error);
           return;
@@ -310,10 +349,10 @@
       });
     });
 
-    document.getElementById('join-btn').addEventListener('click', () => {
+    joinBtn.addEventListener('click', () => {
       const name = document.getElementById('join-name').value.trim();
       const code = document.getElementById('join-code').value.trim().toUpperCase();
-      socket.emit('join_lobby', { name, code }, (response) => {
+      emitWithAck('join_lobby', { name, code }, (response) => {
         if (!response.ok) {
           showError(response.error);
           return;
@@ -327,6 +366,7 @@
 
     startBtn.addEventListener('click', () => socket.emit('start_game'));
     goGameBtn.addEventListener('click', openGamePage);
+    updateConnectionUI();
   </script>
 </body>
 </html>
