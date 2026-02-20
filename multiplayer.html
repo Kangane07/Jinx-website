@@ -152,7 +152,6 @@
       </div>
       <div id="entry-error" class="result"></div>
       <div id="socket-status" class="small">Connecting to server...</div>
-      <button id="retry-connect-btn" class="secondary">Retry Connection</button>
     </div>
 
     <div id="lobby" class="hidden">
@@ -197,32 +196,12 @@
     const createBtn = document.getElementById('create-btn');
     const joinBtn = document.getElementById('join-btn');
     const socketStatus = document.getElementById('socket-status');
-    const retryConnectBtn = document.getElementById('retry-connect-btn');
-    let connectWaitTimer = null;
 
     function updateConnectionUI() {
       const connected = socket.connected;
       createBtn.disabled = !connected;
       joinBtn.disabled = !connected;
-      retryConnectBtn.style.display = connected ? 'none' : 'inline-block';
-      socketStatus.textContent = connected
-        ? 'Connected.'
-        : 'Connecting to server... If this takes too long, tap Retry Connection.';
-    }
-
-    function startConnectWatchdog() {
-      if (connectWaitTimer) {
-        clearTimeout(connectWaitTimer);
-      }
-      connectWaitTimer = setTimeout(() => {
-        if (!socket.connected) {
-          socketStatus.textContent = 'Unable to reach server. Tap Retry Connection.';
-          showError('Could not connect to realtime server. Please retry.');
-          createBtn.disabled = true;
-          joinBtn.disabled = true;
-          retryConnectBtn.style.display = 'inline-block';
-        }
-      }, 5000);
+      socketStatus.textContent = connected ? 'Connected.' : 'Connecting to server...';
     }
 
     function emitWithAck(event, payload, callback) {
@@ -331,7 +310,6 @@
 
     socket.on('connect', () => {
       myId = socket.id;
-      if (connectWaitTimer) clearTimeout(connectWaitTimer);
       updateConnectionUI();
       const session = getSession();
       if (session?.code && session?.playerKey) {
@@ -345,13 +323,6 @@
 
     socket.on('disconnect', () => {
       updateConnectionUI();
-      startConnectWatchdog();
-    });
-
-    socket.on('connect_error', () => {
-      socketStatus.textContent = 'Unable to reach server. Tap Retry Connection.';
-      showError('Realtime server unavailable. Check internet and retry.');
-      retryConnectBtn.style.display = 'inline-block';
     });
 
     socket.on('lobby_state', (state) => {
@@ -397,16 +368,7 @@
 
     startBtn.addEventListener('click', () => socket.emit('start_game'));
     goGameBtn.addEventListener('click', openGamePage);
-    retryConnectBtn.addEventListener('click', () => {
-      showError('');
-      updateConnectionUI();
-      socket.connect();
-      startConnectWatchdog();
-    });
-
     updateConnectionUI();
-    socket.connect();
-    startConnectWatchdog();
   </script>
 </body>
 </html>
