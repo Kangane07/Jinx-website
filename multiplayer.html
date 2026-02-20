@@ -74,6 +74,8 @@
 
     .hidden { display: none; }
 
+    #retry-connect-btn { display: none; }
+
     .badge {
       display: inline-block;
       background: rgba(108, 99, 255, 0.12);
@@ -174,7 +176,7 @@
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const socket = io();
+    const socket = io({ autoConnect: false, reconnectionAttempts: 4, timeout: 5000 });
     let myId = null;
     let lobbyState = null;
 
