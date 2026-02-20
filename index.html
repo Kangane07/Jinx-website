@@ -11,7 +11,6 @@
     gtag('js', new Date());
     gtag('config', 'G-QTBX2M9ZK4');
   </script>
-  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
   <style>
     :root {
       --primary-color: #6c63ff;
@@ -21,17 +20,12 @@
       --danger: #ff5f6d;
     }
 
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-    }
+    html, body { height: 100%; margin: 0; padding: 0; }
 
     body {
       font-family: 'Poppins', sans-serif;
       background: linear-gradient(135deg, #6c63ff, #ffd369);
       color: var(--text-color);
-      text-align: center;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -39,42 +33,41 @@
       padding: 12px;
     }
 
-    #game-container {
+    #app {
       margin: 20px;
       padding: 20px;
       border-radius: 15px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
       background: linear-gradient(145deg, #ffffff, #e6e6e6);
-      max-width: 700px;
-      position: relative;
-      z-index: 10;
+      max-width: 760px;
       width: 100%;
       margin-bottom: 56px;
     }
 
-    h1, h2, h3 {
-      color: var(--primary-color);
-      margin-top: 0;
-    }
+    h1, h2, h3 { color: var(--primary-color); margin-top: 0; }
 
-    input {
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    input, select {
       padding: 10px;
-      margin: 10px 0;
+      margin: 8px 0;
       border: 1px solid #ddd;
       border-radius: 8px;
-      width: 90%;
+      width: 100%;
       font-size: 16px;
+      box-sizing: border-box;
     }
 
     .button {
       display: inline-block;
       padding: 12px 20px;
-      margin: 8px;
+      margin: 8px 8px 0 0;
       font-size: 16px;
       font-weight: 700;
       border: none;
       border-radius: 8px;
-      color: white;
+      color: #fff;
       background-color: var(--primary-color);
       cursor: pointer;
       transition: background-color 0.25s ease;
@@ -83,17 +76,16 @@
     .button:hover { background-color: var(--button-hover); }
     .button.secondary { background: #434368; }
     .button.warning { background: var(--danger); }
+    .button[disabled] { opacity: 0.55; cursor: not-allowed; }
 
-    .hidden { display: none; }
-
-    .menu-grid {
+    .menu-grid, .entry-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 14px;
-      margin-top: 18px;
+      margin-top: 16px;
     }
 
-    .mode-card {
+    .card {
       background: #f4f5ff;
       border: 1px solid #dfe1ff;
       border-radius: 12px;
@@ -101,37 +93,15 @@
       text-align: left;
     }
 
-    .mode-card p {
-      margin: 8px 0;
-      color: #4d4f66;
-      min-height: 60px;
-    }
-
-    #game-hint {
-      font-size: 14px;
-      color: #555;
-      margin-top: 0;
-    }
-
-    #round-indicator,
     .badge {
       display: inline-block;
       padding: 6px 12px;
       border-radius: 999px;
       background: rgba(108, 99, 255, 0.12);
       color: var(--primary-color);
-      font-weight: 600;
-      margin-bottom: 14px;
+      font-weight: 700;
       margin-right: 8px;
-    }
-
-    #question-area,
-    .question {
-      font-size: 18px;
-      font-weight: bold;
-      color: #2b2b58;
-      margin: 16px 0;
-      min-height: 24px;
+      margin-bottom: 12px;
     }
 
     .status {
@@ -161,7 +131,6 @@
     }
 
     .players-list li:last-child { border-bottom: none; }
-
     .player-name { flex: 1; }
 
     .mini-btn {
@@ -173,11 +142,15 @@
       font-size: 12px;
       cursor: pointer;
       font-weight: 700;
+      margin: 0;
     }
 
-    .button[disabled] {
-      opacity: 0.55;
-      cursor: not-allowed;
+    .question {
+      font-size: 18px;
+      font-weight: bold;
+      color: #2b2b58;
+      margin: 16px 0;
+      min-height: 24px;
     }
 
     .result {
@@ -188,91 +161,14 @@
       min-height: 22px;
     }
 
-    #multiplayer-entry {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 12px;
-      text-align: left;
-    }
-
-    .section-actions {
-      margin-top: 12px;
-    }
-
-    .game-stage {
-      margin-top: 14px;
-      padding: 14px;
-      border-radius: 12px;
-      background: #f9faff;
-      border: 1px solid #e2e6ff;
-    }
-
-    .game-stage h3 {
-      margin-bottom: 8px;
-    }
-
-    .answer-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      align-items: end;
-      margin: 10px 0;
-    }
-
-    .answer-row select {
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 15px;
-      width: 100%;
-    }
-
-    #modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 20;
-      visibility: hidden;
-      opacity: 0;
-      transition: visibility 0s, opacity 0.3s;
-    }
-
-    #modal.active {
-      visibility: visible;
-      opacity: 1;
-    }
-
-    #modal-content {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      text-align: center;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-      max-width: 320px;
-      width: 85%;
-    }
-
-    #close-modal {
-      padding: 10px 20px;
-      background-color: var(--secondary-color);
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+    .hint { font-size: 14px; color: #555; }
 
     #contact-developer {
       position: fixed;
       top: 10px;
       left: 10px;
       background-color: var(--secondary-color);
-      color: white;
+      color: #fff;
       padding: 10px 16px;
       border-radius: 5px;
       font-size: 14px;
@@ -281,217 +177,162 @@
       z-index: 30;
     }
 
-    #contact-developer:hover { background-color: #ffbb33; }
-
     footer {
-      position: fixed !important;
+      position: fixed;
       left: 0;
       right: 0;
       bottom: max(8px, env(safe-area-inset-bottom));
       width: 100%;
-      background-color: transparent;
       color: #fff;
       padding: 8px 0;
       font-size: 14px;
       text-align: center;
-      z-index: 2;
-      pointer-events: none;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+      pointer-events: none;
     }
 
     footer a { color: #fff; text-decoration: none; pointer-events: auto; }
-    footer a:hover { text-decoration: underline; }
 
     @media (max-width: 600px) {
-      h1, h2 { font-size: 24px; }
-      input { font-size: 14px; width: 95%; }
-      .button { font-size: 14px; padding: 10px 18px; }
-      #contact-developer { font-size: 12px; padding: 8px 12px; }
+      .button { font-size: 14px; padding: 10px 16px; }
     }
   </style>
 </head>
 <body>
   <a id="contact-developer" href="https://www.instagram.com/om_kangane07" target="_blank">Contact Developer</a>
 
-  <div id="game-container">
+  <div id="app">
     <h1>Jinx Game</h1>
 
-    <div id="main-menu">
+    <section id="screen-menu" class="screen active">
       <p>Choose how you want to play.</p>
       <div class="menu-grid">
-        <div class="mode-card">
+        <div class="card">
           <h3>📱 Local Mode</h3>
           <p>Everyone plays on one phone by passing the device in a circle.</p>
-          <button id="play-local-btn" data-mode="local" class="button" onclick="showLocalMode()">Play Local</button>
+          <button class="button" id="go-local">Play Local</button>
         </div>
-        <div class="mode-card">
+        <div class="card">
           <h3>🌐 Multiplayer Mode</h3>
-          <p>Host creates a lobby code and friends join from their own devices.</p>
-          <button id="play-multi-btn" data-mode="multi" class="button secondary" onclick="showMultiplayerMode()">Play Multiplayer</button>
+          <p>Separate lobby and game screens, all in one file.</p>
+          <button class="button secondary" id="go-multi-entry">Play Multiplayer</button>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div id="local-mode" class="hidden">
+    <section id="screen-local" class="screen">
       <h2>Local Mode</h2>
-      <div id="setup">
-        <label for="players">Enter player names (comma-separated):</label><br />
-        <input type="text" id="players" placeholder="e.g., Om, Sandip, Akshay" /><br />
-        <p id="game-hint">Tip: Add at least 3 players for maximum suspense.</p>
-        <button class="button" onclick="startLocalGame()">Start Game</button>
+      <label for="players">Enter player names (comma-separated):</label>
+      <input type="text" id="players" placeholder="e.g., Om, Sandip, Akshay" />
+      <p class="hint">Tip: Add at least 3 players for maximum suspense.</p>
+      <button class="button" id="start-local">Start Game</button>
+
+      <div id="local-game" style="display:none; margin-top: 14px;">
+        <div id="round-indicator" class="badge">Round 1</div>
+        <h3 id="current-player"></h3>
+        <p id="question-area" class="question" style="display:none;">Question: <span id="question"></span></p>
+        <button id="ask-question" class="button">Give Question</button>
+        <button id="flip-coin" class="button" style="display:none;">Flip Coin</button>
       </div>
 
-      <div id="gameplay" class="hidden">
-        <div id="round-indicator">Round 1</div>
-        <h2 id="current-player"></h2>
-        <p id="question-area" class="hidden">Question: <span id="question"></span></p>
-        <button id="ask-question" class="button" onclick="giveLocalQuestion()">Give Question</button>
-        <button id="flip-coin" class="hidden button" onclick="flipLocalCoin()">Flip Coin</button>
-      </div>
+      <div class="result" id="local-result"></div>
+      <button class="button secondary" id="back-from-local">Back to Main Menu</button>
+    </section>
 
-      <div class="section-actions">
-        <button class="button secondary" onclick="backToMenu()">Back to Main Menu</button>
-      </div>
-    </div>
-
-    <div id="multiplayer-mode" class="hidden">
-      <h2>Realtime Multiplayer (Beta)</h2>
-      <p id="game-hint">No background server needed. Tap create or join lobby directly.</p>
-
-      <div id="multiplayer-entry">
-        <div class="mode-card">
+    <section id="screen-multi-entry" class="screen">
+      <h2>Realtime Multiplayer Lobby</h2>
+      <p class="hint">Create or join lobby first, then game opens in dedicated Game screen.</p>
+      <div class="entry-grid">
+        <div class="card">
           <h3>Create Lobby</h3>
           <input id="host-name" placeholder="Your name" maxlength="20" />
-          <button class="button" id="create-lobby-btn">Create Lobby</button>
+          <button class="button" id="create-btn" disabled>Create Lobby</button>
         </div>
-        <div class="mode-card">
+        <div class="card">
           <h3>Join Lobby</h3>
           <input id="join-name" placeholder="Your name" maxlength="20" />
           <input id="join-code" placeholder="Lobby code" maxlength="6" />
-          <button class="button secondary" id="join-lobby-btn">Join Lobby</button>
+          <button class="button secondary" id="join-btn" disabled>Join Lobby</button>
         </div>
       </div>
+      <div id="entry-error" class="result"></div>
+      <div id="socket-status" class="hint">Connecting to server...</div>
+      <button id="retry-connect-btn" class="button secondary" style="display:none;">Retry Connection</button>
+      <br />
+      <button class="button secondary" id="back-from-entry">Back to Main Menu</button>
+    </section>
 
-      <p id="entry-error" class="result"></p>
-      <p id="auto-server-status" class="result"></p>
-
-      <div id="multiplayer-lobby" class="hidden">
-        <span id="code-badge" class="badge"></span>
-        <span id="multi-round-badge" class="badge"></span>
-
-        <div id="multiplayer-waiting">
-          <div>
-            <button id="copy-lobby-btn" class="button secondary">Copy Lobby Code</button>
-            <button id="share-lobby-btn" class="button">Share Lobby</button>
-          </div>
-
-          <div class="status">
-            <strong>Turn:</strong> <span id="turn-text">Waiting...</span><br />
-            <strong>Host:</strong> <span id="host-text">-</span>
-          </div>
-
-          <h3>Players</h3>
-          <ul id="players-list" class="players-list"></ul>
-
-          <div>
-            <button id="start-btn" class="button secondary hidden">Start Game</button>
-          </div>
-        </div>
-
-        <div id="multiplayer-game" class="game-stage hidden">
-          <h3>Game Screen</h3>
-          <div class="status">
-            <strong>Turn:</strong> <span id="turn-text-game">Waiting...</span><br />
-            <strong>Host:</strong> <span id="host-text-game">-</span>
-          </div>
-
-          <div>
-            <button id="ask-btn" class="button">Give Question</button>
-            <button id="flip-btn" class="button">Flip Coin</button>
-            <button id="next-btn" class="button warning">Next Turn</button>
-          </div>
-
-          <div class="answer-row">
-            <select id="answer-player-select">
-              <option value="">Choose player name as your answer</option>
-            </select>
-            <button id="answer-btn" class="button secondary">Answer Name</button>
-          </div>
-
-          <div id="answer-text" class="result"></div>
-          <div id="question-text" class="question"></div>
-          <div id="coin-text" class="result"></div>
-          <div id="status-text" class="result"></div>
-        </div>
+    <section id="screen-lobby" class="screen">
+      <h2>Lobby Screen</h2>
+      <span id="code-badge" class="badge"></span>
+      <span id="round-badge" class="badge"></span>
+      <div class="status">
+        <strong>Status:</strong> <span id="turn-text">Waiting...</span><br />
+        <strong>Host:</strong> <span id="host-text">-</span>
       </div>
 
-      <div class="section-actions">
-        <button class="button secondary" onclick="backToMenu()">Back to Main Menu</button>
+      <h3>Players</h3>
+      <ul id="players-list" class="players-list"></ul>
+
+      <button id="start-btn" class="button secondary" style="display:none;">Start Game</button>
+      <button id="open-game-btn" class="button" style="display:none;">Open Game Screen</button>
+      <button class="button secondary" id="back-from-lobby">Back to Menu</button>
+
+      <div class="result" id="lobby-status"></div>
+    </section>
+
+    <section id="screen-game" class="screen">
+      <h2>Game Screen</h2>
+      <span id="code-badge-game" class="badge"></span>
+      <span id="round-badge-game" class="badge"></span>
+
+      <div class="status">
+        <strong>Turn:</strong> <span id="turn-text-game">Waiting...</span><br />
+        <strong>Host:</strong> <span id="host-text-game">-</span>
       </div>
-    </div>
+
+      <div>
+        <button id="ask-btn" class="button">Give Question</button>
+        <button id="flip-btn" class="button">Flip Coin</button>
+        <button id="next-btn" class="button warning">Next Turn</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;margin-top:10px;">
+        <select id="answer-player-select">
+          <option value="">Choose player name as your answer</option>
+        </select>
+        <button id="answer-btn" class="button secondary">Answer Name</button>
+      </div>
+
+      <div id="answer-text" class="result"></div>
+      <div id="question-text" class="question"></div>
+      <div id="coin-text" class="result"></div>
+      <div id="game-status" class="result"></div>
+
+      <button class="button secondary" id="back-to-lobby">Back to Lobby Screen</button>
+    </section>
   </div>
 
   <footer>
     &copy; 2025 Jinx. All rights reserved. | <a href="privacy-policy.html" target="_blank">Privacy Policy</a>
   </footer>
 
-  <div id="modal">
-    <div id="modal-content">
-      <p id="modal-message"></p>
-      <p id="modal-question" class="hidden"></p>
-      <button id="close-modal" onclick="closeLocalModal()">Close</button>
-    </div>
-  </div>
-
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-    // -------- Main menu/navigation --------
-    const mainMenu = document.getElementById('main-menu');
-    const localMode = document.getElementById('local-mode');
-    const multiplayerMode = document.getElementById('multiplayer-mode');
-    const playLocalBtn = document.getElementById('play-local-btn');
-    const playMultiBtn = document.getElementById('play-multi-btn');
+    const screens = {
+      menu: document.getElementById('screen-menu'),
+      local: document.getElementById('screen-local'),
+      entry: document.getElementById('screen-multi-entry'),
+      lobby: document.getElementById('screen-lobby'),
+      game: document.getElementById('screen-game')
+    };
 
-    if (playLocalBtn) {
-      playLocalBtn.addEventListener('click', showLocalMode);
+    function showScreen(name) {
+      Object.values(screens).forEach((screen) => screen.classList.remove('active'));
+      screens[name].classList.add('active');
     }
 
-    if (playMultiBtn) {
-      playMultiBtn.addEventListener('click', showMultiplayerMode);
-    }
-
-    document.addEventListener('click', (event) => {
-      const modeButton = event.target.closest('[data-mode]');
-      if (!modeButton) return;
-
-      const mode = modeButton.getAttribute('data-mode');
-      if (mode === 'local') {
-        showLocalMode();
-      } else if (mode === 'multi') {
-        showMultiplayerMode();
-      }
-    });
-
-    function showLocalMode() {
-      mainMenu.classList.add('hidden');
-      multiplayerMode.classList.add('hidden');
-      localMode.classList.remove('hidden');
-    }
-
-    function showMultiplayerMode() {
-      mainMenu.classList.add('hidden');
-      localMode.classList.add('hidden');
-      multiplayerMode.classList.remove('hidden');
-      entryError.textContent = "";
-      autoServerStatus.textContent = "";
-    }
-
-    function backToMenu() {
-      mainMenu.classList.remove('hidden');
-      localMode.classList.add('hidden');
-      multiplayerMode.classList.add('hidden');
-    }
-
-    // -------- Local mode logic --------
+    // -------- Local mode --------
     let players = [];
     let currentQuestion = '';
     let roundNumber = 1;
@@ -499,175 +340,22 @@
     let questionQueue = [];
 
     const questions = [
-      { type: 'spicy', text: 'Who would survive the longest in a zombie apocalypse?' },
-      { type: 'fun', text: 'Who has the best smile?' },
-      { type: 'spicy', text: 'Who is most likely to show up late to their own wedding?' },
-      { type: 'fun', text: 'Who is the funniest person here?' },
-      { type: 'spicy', text: 'Who is most likely to start a dramatic rumor by accident?' },
-      { type: 'fun', text: 'Who is most likely to brighten your day?' },
-      { type: 'spicy', text: 'Who is most likely to forget where they parked?' },
-      { type: 'fun', text: 'Who has the kindest heart?' },
-      { type: 'spicy', text: 'Who is most likely to send a text to the wrong person?' },
-      { type: 'fun', text: 'Who has the most contagious laugh?' },
-      { type: 'spicy', text: 'Who is the biggest drama magnet?' },
-      { type: 'fun', text: 'Who is the best storyteller?' }
+      'Who would survive the longest in a zombie apocalypse?',
+      'Who has the best smile?',
+      'Who is most likely to show up late to their own wedding?',
+      'Who is the funniest person here?',
+      'Who is most likely to start a dramatic rumor by accident?',
+      'Who is most likely to brighten your day?',
+      'Who is most likely to forget where they parked?',
+      'Who has the kindest heart?',
+      'Who is most likely to send a text to the wrong person?',
+      'Who has the most contagious laugh?',
+      'Who is the biggest drama magnet?',
+      'Who is the best storyteller?'
     ];
 
     function shuffleArray(array) {
-      for (let i = array.length - 1; i > 0; i -= 1) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-      return array;
-    }
-
-    function refillPlayerQueue() {
-      playerQueue = shuffleArray([...players]);
-    }
-
-    function refillQuestionQueue() {
-      questionQueue = shuffleArray([...questions]);
-    }
-
-    function startLocalGame() {
-      const input = document.getElementById('players').value;
-      players = input.split(',').map((name) => name.trim()).filter((name) => name.length > 0);
-      players = [...new Set(players)];
-
-      if (players.length < 2) {
-        alert('Please enter at least two valid player names!');
-        return;
-      }
-
-      roundNumber = 1;
-      refillPlayerQueue();
-      refillQuestionQueue();
-      document.getElementById('round-indicator').innerText = `Round ${roundNumber}`;
-
-      if (players.includes('OMKAR')) {
-        document.getElementById('modal-message').innerText = 'Jinx Creator Has Joined The Game';
-        document.getElementById('modal-question').classList.add('hidden');
-        document.getElementById('modal').classList.add('active');
-      }
-
-      document.getElementById('setup').classList.add('hidden');
-      document.getElementById('gameplay').classList.remove('hidden');
-      nextLocalPlayer();
-    }
-
-    function nextLocalPlayer() {
-      if (playerQueue.length === 0) {
-        roundNumber += 1;
-        refillPlayerQueue();
-      }
-
-      const playerName = playerQueue.pop();
-      document.getElementById('current-player').innerText = `${playerName}'s Turn`;
-      document.getElementById('round-indicator').innerText = `Round ${roundNumber}`;
-      document.getElementById('ask-question').classList.remove('hidden');
-      document.getElementById('question-area').classList.add('hidden');
-      document.getElementById('flip-coin').classList.add('hidden');
-    }
-
-    function giveLocalQuestion() {
-      if (questionQueue.length === 0) {
-        refillQuestionQueue();
-      }
-
-      const randomQuestion = questionQueue.pop();
-      currentQuestion = randomQuestion.text;
-      document.getElementById('question').innerText = currentQuestion;
-      document.getElementById('question-area').classList.remove('hidden');
-      document.getElementById('ask-question').classList.add('hidden');
-      document.getElementById('flip-coin').classList.remove('hidden');
-    }
-
-    function flipLocalCoin() {
-      const result = Math.random() < 0.5 ? 'Heads' : 'Tails';
-      document.getElementById('modal-message').innerText = `Coin Result: ${result}`;
-      document.getElementById('modal-question').classList.remove('hidden');
-
-      if (result === 'Heads') {
-        document.getElementById('modal-question').innerText = `Revealed Question: ${currentQuestion}`;
-      } else {
-        document.getElementById('modal-question').innerText = 'Question remains a mystery!';
-      }
-
-      document.getElementById('modal').classList.add('active');
-      document.getElementById('question-area').classList.add('hidden');
-    }
-
-    function closeLocalModal() {
-      document.getElementById('modal').classList.remove('active');
-      if (!document.getElementById('gameplay').classList.contains('hidden')) {
-        nextLocalPlayer();
-      }
-    }
-
-    document.getElementById('players').addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        startLocalGame();
-      }
-    });
-
-    // -------- Realtime multiplayer logic (PeerJS, no custom server needed) --------
-    let peer = null;
-    let myId = null;
-    let lobbyState = null;
-    let isHostPlayer = false;
-    let hostConn = null;
-    let lastMultiplayerQuestion = '';
-    const peerConnections = new Map();
-    let multiplayerControlsBound = false;
-
-    const entryError = document.getElementById('entry-error');
-    const autoServerStatus = document.getElementById('auto-server-status');
-    const multiplayerLobby = document.getElementById('multiplayer-lobby');
-    const codeBadge = document.getElementById('code-badge');
-    const multiRoundBadge = document.getElementById('multi-round-badge');
-    const turnText = document.getElementById('turn-text');
-    const hostText = document.getElementById('host-text');
-    const playersList = document.getElementById('players-list');
-    const startBtn = document.getElementById('start-btn');
-    const askBtn = document.getElementById('ask-btn');
-    const flipBtn = document.getElementById('flip-btn');
-    const nextBtn = document.getElementById('next-btn');
-    const questionText = document.getElementById('question-text');
-    const coinText = document.getElementById('coin-text');
-    const statusText = document.getElementById('status-text');
-    const copyLobbyBtn = document.getElementById('copy-lobby-btn');
-    const shareLobbyBtn = document.getElementById('share-lobby-btn');
-    const multiplayerWaiting = document.getElementById('multiplayer-waiting');
-    const multiplayerGame = document.getElementById('multiplayer-game');
-    const turnTextGame = document.getElementById('turn-text-game');
-    const hostTextGame = document.getElementById('host-text-game');
-    const answerPlayerSelect = document.getElementById('answer-player-select');
-    const answerBtn = document.getElementById('answer-btn');
-    const answerText = document.getElementById('answer-text');
-
-    function randomLobbyCode() {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      let code = '';
-      for (let i = 0; i < 6; i += 1) {
-        code += chars[Math.floor(Math.random() * chars.length)];
-      }
-      return code;
-    }
-
-    function getRandomQuestionText() {
-      let question = questions[Math.floor(Math.random() * questions.length)].text;
-      if (questions.length > 1) {
-        while (question === lastMultiplayerQuestion) {
-          question = questions[Math.floor(Math.random() * questions.length)].text;
-        }
-      }
-      lastMultiplayerQuestion = question;
-      return question;
-    }
-
-    function shuffleArray(items) {
-      const arr = [...items];
+      const arr = [...array];
       for (let i = arr.length - 1; i > 0; i -= 1) {
         const j = Math.floor(Math.random() * (i + 1));
         [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -675,337 +363,143 @@
       return arr;
     }
 
-    function refillTurnPool() {
-      if (!lobbyState) return;
-      lobbyState.turnPool = shuffleArray(lobbyState.players.map((player) => player.id));
-      if (!lobbyState.turnPool.length) {
-        lobbyState.turnIndex = 0;
+    function nextLocalPlayer() {
+      if (!playerQueue.length) {
+        roundNumber += 1;
+        playerQueue = shuffleArray(players);
+      }
+
+      const playerName = playerQueue.pop();
+      document.getElementById('current-player').textContent = `${playerName}'s Turn`;
+      document.getElementById('round-indicator').textContent = `Round ${roundNumber}`;
+      document.getElementById('ask-question').style.display = 'inline-block';
+      document.getElementById('flip-coin').style.display = 'none';
+      document.getElementById('question-area').style.display = 'none';
+      document.getElementById('local-result').textContent = '';
+    }
+
+    document.getElementById('start-local').addEventListener('click', () => {
+      players = document.getElementById('players').value.split(',').map((n) => n.trim()).filter(Boolean);
+      players = [...new Set(players)];
+      if (players.length < 2) {
+        document.getElementById('local-result').textContent = 'Please enter at least two valid player names.';
         return;
       }
-      const nextId = lobbyState.turnPool.shift();
-      lobbyState.turnIndex = lobbyState.players.findIndex((p) => p.id === nextId);
+      roundNumber = 1;
+      playerQueue = shuffleArray(players);
+      questionQueue = shuffleArray(questions);
+      document.getElementById('local-game').style.display = 'block';
+      nextLocalPlayer();
+    });
+
+    document.getElementById('ask-question').addEventListener('click', () => {
+      if (!questionQueue.length) questionQueue = shuffleArray(questions);
+      currentQuestion = questionQueue.pop();
+      document.getElementById('question').textContent = currentQuestion;
+      document.getElementById('question-area').style.display = 'block';
+      document.getElementById('ask-question').style.display = 'none';
+      document.getElementById('flip-coin').style.display = 'inline-block';
+    });
+
+    document.getElementById('flip-coin').addEventListener('click', () => {
+      const result = Math.random() < 0.5 ? 'Heads' : 'Tails';
+      document.getElementById('local-result').textContent = result === 'Heads'
+        ? `Coin: Heads — Question revealed: ${currentQuestion}`
+        : 'Coin: Tails — Question stays a mystery.';
+      nextLocalPlayer();
+    });
+
+    // -------- Multiplayer mode (single-file with separate screens) --------
+    const socket = io({ autoConnect: false, reconnectionAttempts: 4, timeout: 5000 });
+    let myId = null;
+    let lobbyState = null;
+    let connectWaitTimer = null;
+
+    const createBtn = document.getElementById('create-btn');
+    const joinBtn = document.getElementById('join-btn');
+    const entryError = document.getElementById('entry-error');
+    const socketStatus = document.getElementById('socket-status');
+    const retryConnectBtn = document.getElementById('retry-connect-btn');
+
+    const codeBadge = document.getElementById('code-badge');
+    const roundBadge = document.getElementById('round-badge');
+    const turnText = document.getElementById('turn-text');
+    const hostText = document.getElementById('host-text');
+    const playersList = document.getElementById('players-list');
+    const startBtn = document.getElementById('start-btn');
+    const openGameBtn = document.getElementById('open-game-btn');
+    const lobbyStatus = document.getElementById('lobby-status');
+
+    const codeBadgeGame = document.getElementById('code-badge-game');
+    const roundBadgeGame = document.getElementById('round-badge-game');
+    const turnTextGame = document.getElementById('turn-text-game');
+    const hostTextGame = document.getElementById('host-text-game');
+    const askBtn = document.getElementById('ask-btn');
+    const flipBtn = document.getElementById('flip-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const answerPlayerSelect = document.getElementById('answer-player-select');
+    const answerBtn = document.getElementById('answer-btn');
+    const answerText = document.getElementById('answer-text');
+    const questionText = document.getElementById('question-text');
+    const coinText = document.getElementById('coin-text');
+    const gameStatus = document.getElementById('game-status');
+
+    function showError(message) {
+      entryError.textContent = message || '';
     }
 
-    function resetPeerState() {
-      if (hostConn) {
-        try { hostConn.close(); } catch (_) {}
-      }
-      peerConnections.forEach((conn) => {
-        try { conn.close(); } catch (_) {}
-      });
-      peerConnections.clear();
-      hostConn = null;
-      isHostPlayer = false;
-      if (peer) {
-        try { peer.destroy(); } catch (_) {}
-      }
-      peer = null;
-      myId = null;
-      lobbyState = null;
-      multiplayerLobby.classList.add('hidden');
-      autoServerStatus.textContent = '';
+    function storeSession(code, playerKey) {
+      localStorage.setItem('jinxSession', JSON.stringify({ code, playerKey }));
     }
 
-    function broadcastLobbyState() {
-      if (!isHostPlayer || !lobbyState) return;
-      const payload = { type: 'state', state: lobbyState };
-      peerConnections.forEach((conn) => {
-        if (conn.open) {
-          conn.send(payload);
+    function getSession() {
+      const raw = localStorage.getItem('jinxSession');
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch (_) { return null; }
+    }
+
+    function clearSession() {
+      localStorage.removeItem('jinxSession');
+    }
+
+    function updateConnectionUI() {
+      const connected = socket.connected;
+      createBtn.disabled = !connected;
+      joinBtn.disabled = !connected;
+      retryConnectBtn.style.display = connected ? 'none' : 'inline-block';
+      socketStatus.textContent = connected
+        ? 'Connected.'
+        : 'Connecting to server... If this takes too long, tap Retry Connection.';
+    }
+
+    function startConnectWatchdog() {
+      if (connectWaitTimer) clearTimeout(connectWaitTimer);
+      connectWaitTimer = setTimeout(() => {
+        if (!socket.connected) {
+          socketStatus.textContent = 'Unable to reach server. Tap Retry Connection.';
+          showError('Could not connect to realtime server. Please retry.');
         }
-      });
+      }, 5000);
     }
 
-    function removePlayer(playerId) {
-      if (!lobbyState) return;
-      const idx = lobbyState.players.findIndex((p) => p.id === playerId);
-      if (idx === -1) return;
-
-      const wasTurnPlayer = lobbyState.players[lobbyState.turnIndex]?.id === playerId;
-      lobbyState.players.splice(idx, 1);
-      lobbyState.turnPool = (lobbyState.turnPool || []).filter((id) => id !== playerId);
-
-      if (!lobbyState.players.length) {
-        resetPeerState();
+    function emitWithAck(event, payload, callback) {
+      if (!socket.connected) {
+        showError('Still connecting to server. Please wait a moment.');
         return;
       }
 
-      if (lobbyState.hostId === playerId) {
-        lobbyState.hostId = lobbyState.players[0].id;
-      }
+      let settled = false;
+      const timeoutId = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        showError('Server did not respond. Please retry.');
+      }, 6000);
 
-      if (wasTurnPlayer && lobbyState.started) {
-        if (!lobbyState.turnPool || !lobbyState.turnPool.length) {
-          lobbyState.round += 1;
-          refillTurnPool();
-        } else {
-          const nextId = lobbyState.turnPool.shift();
-          lobbyState.turnIndex = lobbyState.players.findIndex((p) => p.id === nextId);
-        }
-      } else if (lobbyState.turnIndex >= lobbyState.players.length) {
-        lobbyState.turnIndex = 0;
-      }
-
-      renderMultiplayer();
-      broadcastLobbyState();
-    }
-
-    function applyActionFromPlayer(playerId, action) {
-      if (!isHostPlayer || !lobbyState) return;
-      const turnPlayer = lobbyState.players[lobbyState.turnIndex];
-      const isHost = playerId === lobbyState.hostId;
-      const isTurn = turnPlayer && turnPlayer.id === playerId;
-
-      if (action === 'start_game') {
-        if (!isHost || lobbyState.players.length < 2) return;
-        lobbyState.started = true;
-        lobbyState.round = 1;
-        lobbyState.questionAsked = false;
-        lobbyState.currentQuestion = '';
-        lobbyState.coinResult = '';
-        lobbyState.questionVisible = false;
-        lobbyState.answerByPlayerId = '';
-        lobbyState.answerByPlayerName = '';
-        refillTurnPool();
-      }
-
-      if (action === 'ask_question') {
-        if (!lobbyState.started || !isTurn || lobbyState.questionAsked) return;
-        lobbyState.currentQuestion = getRandomQuestionText();
-        lobbyState.questionAsked = true;
-        lobbyState.coinResult = '';
-        lobbyState.questionVisible = false;
-        lobbyState.answerByPlayerId = '';
-        lobbyState.answerByPlayerName = '';
-      }
-
-      if (action?.type === 'answer_player') {
-        if (!lobbyState.started || !isTurn || !lobbyState.questionAsked || lobbyState.coinResult) return;
-        const targetId = String(action.targetId || '');
-        const target = lobbyState.players.find((player) => player.id === targetId);
-        if (!target) return;
-        lobbyState.answerByPlayerId = target.id;
-        lobbyState.answerByPlayerName = target.name;
-      }
-
-      if (action === 'flip_coin') {
-        if (!lobbyState.started || !isTurn || !lobbyState.questionAsked || lobbyState.coinResult || !lobbyState.answerByPlayerId) return;
-        lobbyState.coinResult = Math.random() < 0.5 ? 'Heads' : 'Tails';
-        lobbyState.questionVisible = lobbyState.coinResult === 'Heads';
-      }
-
-      if (action === 'next_turn') {
-        if (!lobbyState.started || !lobbyState.coinResult || !(isTurn || isHost)) return;
-        if (!lobbyState.turnPool || !lobbyState.turnPool.length) {
-          lobbyState.round += 1;
-          refillTurnPool();
-        } else {
-          const nextId = lobbyState.turnPool.shift();
-          lobbyState.turnIndex = lobbyState.players.findIndex((p) => p.id === nextId);
-        }
-        lobbyState.questionAsked = false;
-        lobbyState.currentQuestion = '';
-        lobbyState.coinResult = '';
-        lobbyState.questionVisible = false;
-        lobbyState.answerByPlayerId = '';
-        lobbyState.answerByPlayerName = '';
-      }
-
-      if (action?.type === 'remove_player') {
-        if (!isHost || lobbyState.started || action.targetId === lobbyState.hostId) return;
-        removePlayer(action.targetId);
-        return;
-      }
-
-      if (action?.type === 'remove_player') {
-        if (!isHost || lobbyState.started || action.targetId === lobbyState.hostId) return;
-        removePlayer(action.targetId);
-        return;
-      }
-
-      renderMultiplayer();
-      broadcastLobbyState();
-    }
-
-    function setupHostConnection(conn) {
-      conn.on('open', () => {
-        peerConnections.set(conn.peer, conn);
-      });
-
-      conn.on('data', (msg) => {
-        if (!msg || typeof msg !== 'object') return;
-        if (msg.type === 'join_request') {
-          const cleanName = String(msg.name || '').trim().slice(0, 20);
-          if (!cleanName) {
-            conn.send({ type: 'error', error: 'Invalid player name.' });
-            return;
-          }
-          if (lobbyState.players.some((p) => p.name.toLowerCase() === cleanName.toLowerCase())) {
-            conn.send({ type: 'error', error: 'Name already exists in lobby.' });
-            return;
-          }
-          lobbyState.players.push({ id: conn.peer, name: cleanName });
-          conn.send({ type: 'state', state: lobbyState });
-          renderMultiplayer();
-          broadcastLobbyState();
-          return;
-        }
-
-        if (msg.type === 'action') {
-          applyActionFromPlayer(conn.peer, msg.action);
-        }
-      });
-
-      conn.on('close', () => {
-        peerConnections.delete(conn.peer);
-        removePlayer(conn.peer);
-      });
-    }
-
-    function createHostLobby(name) {
-      resetPeerState();
-      const cleanName = String(name || '').trim().slice(0, 20);
-      if (!cleanName) {
-        entryError.textContent = 'Enter your name first.';
-        return;
-      }
-
-      const lobbyCode = randomLobbyCode();
-      autoServerStatus.textContent = 'Creating lobby...';
-      peer = new Peer(lobbyCode);
-
-      peer.on('open', (id) => {
-        isHostPlayer = true;
-        myId = id;
-        lobbyState = {
-          code: lobbyCode,
-          hostId: id,
-          players: [{ id, name: cleanName }],
-          started: false,
-          turnIndex: 0,
-          round: 1,
-          questionAsked: false,
-          currentQuestion: '',
-          coinResult: '',
-          questionVisible: false,
-          answerByPlayerId: '',
-          answerByPlayerName: '',
-          turnPool: []
-        };
-        entryError.textContent = '';
-        autoServerStatus.textContent = 'Lobby created. Share code with friends.';
-        renderMultiplayer();
-      });
-
-      peer.on('connection', setupHostConnection);
-      peer.on('error', (err) => {
-        entryError.textContent = err?.type === 'unavailable-id'
-          ? 'Try again: lobby code collision happened.'
-          : 'Could not create lobby. Check internet and retry.';
-      });
-    }
-
-    function joinHostLobby(name, code) {
-      resetPeerState();
-      const cleanName = String(name || '').trim().slice(0, 20);
-      const lobbyCode = String(code || '').trim().toUpperCase();
-      if (!cleanName || !lobbyCode) {
-        entryError.textContent = 'Enter name and lobby code.';
-        return;
-      }
-
-      autoServerStatus.textContent = 'Joining lobby...';
-      peer = new Peer();
-
-      peer.on('open', (id) => {
-        myId = id;
-        hostConn = peer.connect(lobbyCode, { reliable: true });
-
-        hostConn.on('open', () => {
-          hostConn.send({ type: 'join_request', name: cleanName });
-          entryError.textContent = '';
-          autoServerStatus.textContent = `Connected to lobby ${lobbyCode}`;
-        });
-
-        hostConn.on('data', (msg) => {
-          if (!msg || typeof msg !== 'object') return;
-          if (msg.type === 'state') {
-            lobbyState = msg.state;
-            renderMultiplayer();
-          }
-          if (msg.type === 'error') {
-            entryError.textContent = msg.error || 'Could not join lobby.';
-          }
-        });
-
-        hostConn.on('close', () => {
-          entryError.textContent = 'Disconnected from host lobby.';
-        });
-      });
-
-      peer.on('error', () => {
-        entryError.textContent = 'Could not join lobby. Check code/internet and retry.';
-      });
-    }
-
-    function sendAction(action) {
-      if (isHostPlayer) {
-        applyActionFromPlayer(myId, action);
-        return;
-      }
-      if (hostConn && hostConn.open) {
-        hostConn.send({ type: 'action', action });
-      }
-    }
-
-    function copyLobbyCode() {
-      if (!lobbyState?.code) return;
-      navigator.clipboard.writeText(lobbyState.code)
-        .then(() => { autoServerStatus.textContent = 'Lobby code copied.'; })
-        .catch(() => { autoServerStatus.textContent = `Lobby code: ${lobbyState.code}`; });
-    }
-
-    function shareLobby() {
-      if (!lobbyState?.code) return;
-      const text = `Join my Jinx lobby! Code: ${lobbyState.code}`;
-      const shareUrl = `${window.location.origin}${window.location.pathname}`;
-      if (navigator.share) {
-        navigator.share({ title: 'Jinx Lobby', text, url: shareUrl }).catch(() => {});
-        return;
-      }
-      const waText = encodeURIComponent(`${text}
-${shareUrl}`);
-      window.open(`https://wa.me/?text=${waText}`, '_blank');
-    }
-
-    if (!multiplayerControlsBound) {
-      multiplayerControlsBound = true;
-      startBtn.addEventListener('click', () => sendAction('start_game'));
-      askBtn.addEventListener('click', () => sendAction('ask_question'));
-      flipBtn.addEventListener('click', () => sendAction('flip_coin'));
-      nextBtn.addEventListener('click', () => sendAction('next_turn'));
-      answerBtn.addEventListener('click', () => {
-        const targetId = answerPlayerSelect.value;
-        if (!targetId) return;
-        sendAction({ type: 'answer_player', targetId });
-      });
-      copyLobbyBtn.addEventListener('click', copyLobbyCode);
-      shareLobbyBtn.addEventListener('click', shareLobby);
-
-      document.getElementById('create-lobby-btn').addEventListener('click', () => {
-        const name = document.getElementById('host-name').value.trim();
-        createHostLobby(name);
-      });
-
-      document.getElementById('join-lobby-btn').addEventListener('click', () => {
-        const name = document.getElementById('join-name').value.trim();
-        const code = document.getElementById('join-code').value.trim().toUpperCase();
-        joinHostLobby(name, code);
-      });
-
-      answerPlayerSelect.addEventListener('change', () => {
-        const canAnswerNow = lobbyState && lobbyState.started && isMyTurn() && lobbyState.questionAsked && !lobbyState.coinResult;
-        answerBtn.disabled = !canAnswerNow || !answerPlayerSelect.value;
+      socket.emit(event, payload, (response) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        callback(response);
       });
     }
 
@@ -1014,46 +508,42 @@ ${shareUrl}`);
     }
 
     function currentTurnPlayer() {
-      if (!lobbyState || !Array.isArray(lobbyState.players)) return null;
-      return lobbyState.players[lobbyState.turnIndex] || null;
-    }
-
-    function isMyTurn() {
-      return currentTurnPlayer()?.id === myId;
+      return lobbyState?.turnPlayer || lobbyState?.players?.[lobbyState.turnIndex] || null;
     }
 
     function isHost() {
       return lobbyState?.hostId === myId;
     }
 
-    function renderMultiplayer() {
-      if (!lobbyState) return;
+    function isMyTurn() {
+      return currentTurnPlayer()?.id === myId;
+    }
 
-      multiplayerLobby.classList.remove('hidden');
+    function renderLobby() {
+      if (!lobbyState) return;
       codeBadge.textContent = `Lobby: ${lobbyState.code}`;
-      multiRoundBadge.textContent = `Round ${lobbyState.round}`;
+      roundBadge.textContent = `Round ${lobbyState.round}`;
 
       const host = playerById(lobbyState.hostId);
       hostText.textContent = host ? host.name : 'Unknown';
 
       playersList.innerHTML = '';
-      lobbyState.players.forEach((p, index) => {
+      lobbyState.players.forEach((p) => {
         const li = document.createElement('li');
         const tags = [];
         if (p.id === lobbyState.hostId) tags.push('Host');
-        if (lobbyState.started && lobbyState.turnIndex === index) tags.push('Turn');
         if (p.id === myId) tags.push('You');
 
-        const nameLabel = document.createElement('span');
-        nameLabel.className = 'player-name';
-        nameLabel.textContent = `${p.name}${tags.length ? ` (${tags.join(', ')})` : ''}`;
-        li.appendChild(nameLabel);
+        const name = document.createElement('span');
+        name.className = 'player-name';
+        name.textContent = `${p.name}${tags.length ? ` (${tags.join(', ')})` : ''}`;
+        li.appendChild(name);
 
-        if (isHost() && !lobbyState.started && p.id !== lobbyState.hostId) {
+        if (isHost() && !lobbyState.started && p.id !== myId) {
           const removeBtn = document.createElement('button');
           removeBtn.className = 'mini-btn';
           removeBtn.textContent = 'Remove';
-          removeBtn.addEventListener('click', () => sendAction({ type: 'remove_player', targetId: p.id }));
+          removeBtn.addEventListener('click', () => socket.emit('remove_player', { targetId: p.id }));
           li.appendChild(removeBtn);
         }
 
@@ -1062,25 +552,23 @@ ${shareUrl}`);
 
       if (!lobbyState.started) {
         turnText.textContent = 'Waiting for host to start the game';
-        statusText.textContent = 'Lobby ready. Invite friends using the code above.';
+        lobbyStatus.textContent = 'Host can remove players before starting.';
       } else {
         turnText.textContent = `${currentTurnPlayer()?.name || 'Unknown'} is playing`;
-        statusText.textContent = isMyTurn() ? 'Your move.' : 'Wait for the active player.';
+        lobbyStatus.textContent = 'Game started. Move to Game Screen.';
       }
 
-      startBtn.classList.toggle('hidden', !(isHost() && !lobbyState.started && lobbyState.players.length >= 2));
-      multiplayerWaiting.classList.toggle('hidden', lobbyState.started);
-      multiplayerGame.classList.toggle('hidden', !lobbyState.started);
+      startBtn.style.display = (isHost() && !lobbyState.started && lobbyState.players.length >= 2) ? 'inline-block' : 'none';
+      openGameBtn.style.display = lobbyState.started ? 'inline-block' : 'none';
+    }
 
-      const turnMessage = lobbyState.started
-        ? `${currentTurnPlayer()?.name || 'Unknown'} is playing`
-        : 'Waiting for host to start the game';
-      turnTextGame.textContent = turnMessage;
-      hostTextGame.textContent = host ? host.name : 'Unknown';
-
-      askBtn.classList.toggle('hidden', !lobbyState.started);
-      flipBtn.classList.toggle('hidden', !lobbyState.started);
-      nextBtn.classList.toggle('hidden', !lobbyState.started);
+    function renderGame() {
+      if (!lobbyState) return;
+      codeBadgeGame.textContent = `Lobby: ${lobbyState.code}`;
+      roundBadgeGame.textContent = `Round ${lobbyState.round}`;
+      turnTextGame.textContent = `${currentTurnPlayer()?.name || 'Unknown'} is playing`;
+      hostTextGame.textContent = playerById(lobbyState.hostId)?.name || 'Unknown';
+      gameStatus.textContent = isMyTurn() ? 'Your move.' : 'Wait for the active player.';
 
       askBtn.disabled = !(lobbyState.started && isMyTurn() && !lobbyState.questionAsked);
       const canAnswer = lobbyState.started && isMyTurn() && lobbyState.questionAsked && !lobbyState.coinResult;
@@ -1106,9 +594,10 @@ ${shareUrl}`);
       }
 
       if (lobbyState.questionAsked) {
-        questionText.textContent = lobbyState.questionVisible
+        const canSeeQuestion = lobbyState.questionVisible || isMyTurn();
+        questionText.textContent = canSeeQuestion
           ? `Question: ${lobbyState.currentQuestion}`
-          : 'Question selected. Answer with a player name, then toss the coin.';
+          : 'Question selected. Waiting for coin toss result.';
       } else {
         questionText.textContent = '';
       }
@@ -1125,6 +614,115 @@ ${shareUrl}`);
         coinText.textContent = '';
       }
     }
+
+    function applyStateAndRoute() {
+      if (!lobbyState) return;
+      renderLobby();
+      renderGame();
+      if (lobbyState.started) showScreen('game');
+      else showScreen('lobby');
+    }
+
+    socket.on('connect', () => {
+      myId = socket.id;
+      if (connectWaitTimer) clearTimeout(connectWaitTimer);
+      updateConnectionUI();
+      const session = getSession();
+      if (session?.code && session?.playerKey) {
+        socket.emit('reconnect_lobby', session, (response) => {
+          if (!response?.ok) return;
+          lobbyState = response.state;
+          applyStateAndRoute();
+        });
+      }
+    });
+
+    socket.on('disconnect', () => {
+      updateConnectionUI();
+      startConnectWatchdog();
+    });
+
+    socket.on('connect_error', () => {
+      socketStatus.textContent = 'Unable to reach server. Tap Retry Connection.';
+      showError('Realtime server unavailable. Check internet and retry.');
+      retryConnectBtn.style.display = 'inline-block';
+    });
+
+    socket.on('lobby_state', (state) => {
+      lobbyState = state;
+      applyStateAndRoute();
+    });
+
+    socket.on('player_removed', ({ targetId }) => {
+      if (targetId === myId) {
+        clearSession();
+        lobbyState = null;
+        showScreen('menu');
+      }
+    });
+
+    // navigation
+    document.getElementById('go-local').addEventListener('click', () => showScreen('local'));
+    document.getElementById('go-multi-entry').addEventListener('click', () => showScreen('entry'));
+    document.getElementById('back-from-local').addEventListener('click', () => showScreen('menu'));
+    document.getElementById('back-from-entry').addEventListener('click', () => showScreen('menu'));
+    document.getElementById('back-from-lobby').addEventListener('click', () => showScreen('menu'));
+    document.getElementById('back-to-lobby').addEventListener('click', () => showScreen('lobby'));
+
+    createBtn.addEventListener('click', () => {
+      const name = document.getElementById('host-name').value.trim();
+      emitWithAck('create_lobby', { name }, (response) => {
+        if (!response?.ok) {
+          showError(response?.error || 'Could not create lobby.');
+          return;
+        }
+        showError('');
+        storeSession(response.code, response.playerKey);
+        lobbyState = response.state;
+        applyStateAndRoute();
+      });
+    });
+
+    joinBtn.addEventListener('click', () => {
+      const name = document.getElementById('join-name').value.trim();
+      const code = document.getElementById('join-code').value.trim().toUpperCase();
+      emitWithAck('join_lobby', { name, code }, (response) => {
+        if (!response?.ok) {
+          showError(response?.error || 'Could not join lobby.');
+          return;
+        }
+        showError('');
+        storeSession(response.code, response.playerKey);
+        lobbyState = response.state;
+        applyStateAndRoute();
+      });
+    });
+
+    startBtn.addEventListener('click', () => socket.emit('start_game'));
+    openGameBtn.addEventListener('click', () => showScreen('game'));
+
+    askBtn.addEventListener('click', () => socket.emit('ask_question'));
+    answerBtn.addEventListener('click', () => {
+      const targetId = answerPlayerSelect.value;
+      if (!targetId) return;
+      socket.emit('answer_player', { targetId });
+    });
+    flipBtn.addEventListener('click', () => socket.emit('flip_coin'));
+    nextBtn.addEventListener('click', () => socket.emit('next_turn'));
+    answerPlayerSelect.addEventListener('change', () => {
+      const canAnswer = lobbyState && lobbyState.started && isMyTurn() && lobbyState.questionAsked && !lobbyState.coinResult;
+      answerBtn.disabled = !canAnswer || !answerPlayerSelect.value;
+    });
+
+    retryConnectBtn.addEventListener('click', () => {
+      showError('');
+      socket.connect();
+      startConnectWatchdog();
+    });
+
+    updateConnectionUI();
+    socket.connect();
+    startConnectWatchdog();
   </script>
 </body>
 </html>

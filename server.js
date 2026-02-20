@@ -78,7 +78,9 @@ function lobbyStateForClient(lobby) {
     questionAsked: lobby.questionAsked,
     currentQuestion: lobby.currentQuestion,
     coinResult: lobby.coinResult,
-    questionVisible: lobby.questionVisible
+    questionVisible: lobby.questionVisible,
+    answerByPlayerId: lobby.answerByPlayerId,
+    answerByPlayerName: lobby.answerByPlayerName
   };
 }
 
@@ -102,6 +104,8 @@ function advanceTurn(lobby) {
   lobby.questionAsked = false;
   lobby.coinResult = '';
   lobby.questionVisible = false;
+  lobby.answerByPlayerId = '';
+  lobby.answerByPlayerName = '';
 }
 
 function removePlayerFromLobby(socketId, code) {
@@ -166,6 +170,8 @@ io.on('connection', (socket) => {
       currentQuestion: '',
       coinResult: '',
       questionVisible: false,
+      answerByPlayerId: '',
+      answerByPlayerName: '',
       lastQuestion: ''
     };
 
@@ -249,6 +255,8 @@ io.on('connection', (socket) => {
     lobby.questionAsked = false;
     lobby.coinResult = '';
     lobby.questionVisible = false;
+    lobby.answerByPlayerId = '';
+    lobby.answerByPlayerName = '';
     broadcastLobby(code);
   });
 
@@ -285,13 +293,31 @@ io.on('connection', (socket) => {
     lobby.questionAsked = true;
     lobby.coinResult = '';
     lobby.questionVisible = false;
+    lobby.answerByPlayerId = '';
+    lobby.answerByPlayerName = '';
+    broadcastLobby(code);
+  });
+
+  socket.on('answer_player', ({ targetId }) => {
+    const code = socket.data.lobbyCode;
+    const lobby = lobbies.get(code);
+    if (!lobby || !lobby.started || !lobby.questionAsked || lobby.coinResult) return;
+
+    const turnPlayer = lobby.players[lobby.turnIndex];
+    if (!turnPlayer || turnPlayer.id !== socket.id) return;
+
+    const target = lobby.players.find((player) => player.id === String(targetId || ''));
+    if (!target) return;
+
+    lobby.answerByPlayerId = target.id;
+    lobby.answerByPlayerName = target.name;
     broadcastLobby(code);
   });
 
   socket.on('flip_coin', () => {
     const code = socket.data.lobbyCode;
     const lobby = lobbies.get(code);
-    if (!lobby || !lobby.started || !lobby.questionAsked || lobby.coinResult) {
+    if (!lobby || !lobby.started || !lobby.questionAsked || lobby.coinResult || !lobby.answerByPlayerId) {
       return;
     }
 
