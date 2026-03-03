@@ -2,6 +2,14 @@
 
 # 🎮 Jinx
 
+
+## 🌐 Live Demo
+
+Play Jinx online here:  
+**https://jinx-website.onrender.com/**
+
+> Multiplayer works across devices from this link.
+
 Hi, I’m **Omkar** — a passionate creator who enjoys building unique projects and fun experiences.  
 I love experimenting with ideas, mixing creativity with logic, and turning simple concepts into engaging products.
 
@@ -101,11 +109,11 @@ The game now starts with a main menu where players choose:
 - **Multiplayer Mode** (host lobby + friends join by code)
 
 
-### Multiplayer now works without running your own server
+### Multiplayer hosting note
 
-Realtime mode now uses PeerJS cloud signaling by default, so you can tap **Play Multiplayer** and create/join lobby directly.
+Realtime mode is server-backed in this version, so multiplayer works when this app is running on a live Node server (for example: Render/Railway).
 
-You only need internet on both devices. No separate backend process is required in normal usage.
+Use the live URL above to create/join lobbies across devices.
 
 
 ## 🔀 Merge Conflicts (Current vs Incoming) — What to choose
