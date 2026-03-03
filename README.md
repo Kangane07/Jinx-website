@@ -94,23 +94,4 @@ Jinx now includes an experimental **realtime multiplayer mode** for cross-device
 ```bash
 npm install
 npm start
-
-
 ---
-
-## 🏷️ GitHub Tags & Releases
-
-Yes — using GitHub tags is recommended for Jinx.
-
-Suggested flow:
-
-```bash
-# after committing your changes
-git tag -a v1.0.0 -m "Jinx v1.0.0"
-git push origin v1.0.0
-```
-
-Use semantic versioning for future releases:
-- `v1.0.1` for patches
-- `v1.1.0` for features
-- `v2.0.0` for breaking changes
