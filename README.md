@@ -94,4 +94,4 @@ Jinx now includes an experimental **realtime multiplayer mode** for cross-device
 ```bash
 npm install
 npm start
-```
+---
