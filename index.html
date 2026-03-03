@@ -410,7 +410,7 @@
     });
 
     // -------- Multiplayer mode (single-file with separate screens) --------
-    const socket = io({ autoConnect: false, reconnectionAttempts: 4, timeout: 5000 });
+    const socket = (typeof window.io === 'function') ? io({ autoConnect: false, reconnectionAttempts: 4, timeout: 5000 }) : null;
     let myId = null;
     let lobbyState = null;
     let connectWaitTimer = null;
@@ -463,7 +463,7 @@
     }
 
     function updateConnectionUI() {
-      const connected = socket.connected;
+      const connected = !!(socket && socket.connected);
       createBtn.disabled = !connected;
       joinBtn.disabled = !connected;
       retryConnectBtn.style.display = connected ? 'none' : 'inline-block';
@@ -475,7 +475,7 @@
     function startConnectWatchdog() {
       if (connectWaitTimer) clearTimeout(connectWaitTimer);
       connectWaitTimer = setTimeout(() => {
-        if (!socket.connected) {
+        if (!socket || !socket.connected) {
           socketStatus.textContent = 'Unable to reach server. Tap Retry Connection.';
           showError('Could not connect to realtime server. Please retry.');
         }
@@ -483,7 +483,7 @@
     }
 
     function emitWithAck(event, payload, callback) {
-      if (!socket.connected) {
+      if (!socket || !socket.connected) {
         showError('Still connecting to server. Please wait a moment.');
         return;
       }
@@ -543,7 +543,7 @@
           const removeBtn = document.createElement('button');
           removeBtn.className = 'mini-btn';
           removeBtn.textContent = 'Remove';
-          removeBtn.addEventListener('click', () => socket.emit('remove_player', { targetId: p.id }));
+          removeBtn.addEventListener('click', () => { if (socket) socket.emit('remove_player', { targetId: p.id }); });
           li.appendChild(removeBtn);
         }
 
@@ -623,6 +623,7 @@
       else showScreen('lobby');
     }
 
+    if (socket) {
     socket.on('connect', () => {
       myId = socket.id;
       if (connectWaitTimer) clearTimeout(connectWaitTimer);
@@ -661,6 +662,8 @@
       }
     });
 
+    }
+
     // navigation
     document.getElementById('go-local').addEventListener('click', () => showScreen('local'));
     document.getElementById('go-multi-entry').addEventListener('click', () => showScreen('entry'));
@@ -698,17 +701,20 @@
       });
     });
 
-    startBtn.addEventListener('click', () => socket.emit('start_game'));
+    startBtn.addEventListener('click', () => {
+      if (!socket) { showError('Realtime server script not loaded. Run with npm start.'); return; }
+      socket.emit('start_game');
+    });
     openGameBtn.addEventListener('click', () => showScreen('game'));
 
-    askBtn.addEventListener('click', () => socket.emit('ask_question'));
+    askBtn.addEventListener('click', () => { if (socket) socket.emit('ask_question'); else showError('Realtime unavailable.'); });
     answerBtn.addEventListener('click', () => {
       const targetId = answerPlayerSelect.value;
       if (!targetId) return;
-      socket.emit('answer_player', { targetId });
+      if (socket) socket.emit('answer_player', { targetId }); else showError('Realtime unavailable.');
     });
-    flipBtn.addEventListener('click', () => socket.emit('flip_coin'));
-    nextBtn.addEventListener('click', () => socket.emit('next_turn'));
+    flipBtn.addEventListener('click', () => { if (socket) socket.emit('flip_coin'); else showError('Realtime unavailable.'); });
+    nextBtn.addEventListener('click', () => { if (socket) socket.emit('next_turn'); else showError('Realtime unavailable.'); });
     answerPlayerSelect.addEventListener('change', () => {
       const canAnswer = lobbyState && lobbyState.started && isMyTurn() && lobbyState.questionAsked && !lobbyState.coinResult;
       answerBtn.disabled = !canAnswer || !answerPlayerSelect.value;
@@ -716,13 +722,20 @@
 
     retryConnectBtn.addEventListener('click', () => {
       showError('');
+      if (!socket) { showError('Realtime server script not loaded. Run with npm start.'); return; }
       socket.connect();
       startConnectWatchdog();
     });
 
+    // bind navigation before realtime setup so local mode always works
     updateConnectionUI();
-    socket.connect();
-    startConnectWatchdog();
+    if (socket) {
+      socket.connect();
+      startConnectWatchdog();
+    } else {
+      socketStatus.textContent = 'Realtime unavailable in this mode. Start via npm run start.';
+      showError('Multiplayer needs server mode (npm run start).');
+    }
   </script>
 </body>
 </html>
