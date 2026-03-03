@@ -2,7 +2,6 @@
 
 # 🎮 Jinx
 
-
 ## 🌐 Live Demo
 
 Play Jinx online here:  
@@ -35,7 +34,54 @@ The core fun of Jinx lies in **not knowing why you were chosen** — and whether
 - A coin toss decides the outcome:
   - **Heads** →  The question is revealed, leading to fun and dramatic reactions.
   - **Tails** → The question remains a mystery.
-@@ -79,55 +87,55 @@ This project is licensed under the **MIT License**.
+
+---
+
+## ✨ Key Features
+
+- 🎲 **Offline Multiplayer** – No internet required  
+- 🪙 **Coin Toss Mechanic** – Builds suspense every round  
+- 📱 **Single Device Gameplay** – Easy and accessible  
+- 🕵️ **Easter Egg** –  
+  Add **OMKAR** (in all caps) as a participant to unlock a hidden message  
+
+---
+
+## ▶️ How to Play
+
+1. Gather your friends in a circle  
+2. Pass the device to take turns  
+3. Read, choose, toss, and react  
+4. Enjoy the suspense, drama, and laughter  
+
+---
+
+## 🎓 Project Context
+
+Jinx was developed as a **college project** to explore:
+- Game logic and flow
+- User engagement through suspense
+- Offline multiplayer interaction
+
+---
+
+## 👤 Developer
+
+**Omkar Kangane**  
+Creator of Jinx 🎮  
+
+📩 Contact Developer:  
+Instagram — **@om_kangane07**
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License**.
+
+---
+
+## 🌐 Realtime Multiplayer (Beta)
 
 Jinx now includes an experimental **realtime multiplayer mode** for cross-device play:
 
@@ -48,43 +94,3 @@ Jinx now includes an experimental **realtime multiplayer mode** for cross-device
 ```bash
 npm install
 npm start
-```
-
-Then open:
-- `http://localhost:3000/index.html` (main menu with both Local and Multiplayer modes)
-
-
-## 🧭 Main Menu
-
-The game now starts with a main menu where players choose:
-- **Local Mode** (single device pass-and-play)
-- **Multiplayer Mode** (host lobby + friends join by code)
-
-### Multiplayer hosting note
-Realtime mode is server-backed in this version, so multiplayer works when this app is running on a live Node server (for example: Render/Railway).
-Use the live URL above to create/join lobbies across devices.
-
-
-## 🔀 Merge Conflicts (Current vs Incoming) — What to choose
-
-If GitHub asks **Current** vs **Incoming** for `index.html`:
-
-- **Current** = code already in `main`.
-- **Incoming** = code from your PR branch.
-
-For the button/footer fixes, prefer **Incoming** for conflict chunks that include:
-- `footer { position: fixed ... pointer-events ... }`
-- `id="play-local-btn"` and `id="play-multi-btn"`
-- JS listeners around `showLocalMode()` / `showMultiplayerMode()`
-
-### Why it can look "same as before" after merge
-This usually happens when conflict blocks were resolved with the wrong side in one chunk, so old behavior comes back.
-
-### Safer method (recommended)
-Resolve conflicts locally (not in GitHub UI):
-
-```bash
-git fetch origin
-git checkout <your-branch>
-git rebase origin/main
-# resolve conflicts in editor, keep the correct mixed result
